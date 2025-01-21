@@ -27,6 +27,8 @@ This is a custom integration that brings your coffee brewer into the Home Assist
 - **Device Info:** Displays firmware version, hardware elevation (for you mountaintop dwellers), Wi-Fi and Bluetooth addresses, plus a witty sense of connectedness.
 - **Brew Profiles:** Create, list, and delete brew profiles from Home Assistant. No more rummaging for the perfect ratio at dawn.
 
+## Screenshot
+<img width="882" alt="Image" src="https://github.com/user-attachments/assets/0fd19320-cdc6-4039-bf6a-58f25018dded" />
 
 ---
 
