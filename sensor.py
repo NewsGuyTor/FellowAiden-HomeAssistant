@@ -89,7 +89,7 @@ class AidenSensor(FellowAidenBaseEntity, SensorEntity):
 
         # Convert totalWaterVolumeL from ml to liters if that's the key
         if self._key == "totalWaterVolumeL" and val is not None:
-            return round(val / 1000.0, 3)  # Keep 3 decimal places
+            return round(val / 1000.0, 2)  # Keep 2 decimal places
 
         return val
 
@@ -115,14 +115,16 @@ class AidenAverageWaterPerBrewSensor(FellowAidenBaseEntity, SensorEntity):
 
     @property
     def native_value(self) -> float | None:
-        """Compute totalWaterVolumeL (in ml) / totalBrews, in liters."""
+        """Compute average water volume per brew in milliliters (ml)."""
         device_config = self.coordinator.data.get("device_config", {})
-        total_water_ml = device_config.get("totalWaterVolumeL")
+        total_water_ml = device_config.get("totalWaterVolumeL")  # Ensure this is in ml
         total_brews = device_config.get("totalBrewingCycles")
 
         if not total_water_ml or not total_brews or total_brews == 0:
             return None
 
-        # Convert ml to liters, then divide by brew count
-        average_liters = (total_water_ml / 1000.0) / total_brews
-        return round(average_liters, 2)
+        # Calculate average in milliliters
+        average_ml = total_water_ml / total_brews
+
+        # Optionally, round to the nearest whole number
+        return round(average_ml, 0)
