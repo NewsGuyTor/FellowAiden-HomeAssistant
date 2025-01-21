@@ -1,0 +1,158 @@
+create_profile:
+  name: "Create Brew Profile"
+  description: "Create a new brew profile on the Fellow Aiden device."
+  fields:
+    profileType:
+      name: "Profile Type"
+      description: "Numeric profile type"
+      required: false
+      example: 0
+      selector:
+        number:
+          min: 0
+          max: 10
+          step: 1
+          mode: box
+    title:
+      name: "Profile Title"
+      description: "Name of the brew profile"
+      required: true
+      example: "My Delicious Coffee"
+      selector:
+        text:
+    ratio:
+      name: "Brew Ratio"
+      description: "Coffee-to-water ratio (e.g. 16 → 1:16 ratio). Must be one of 14–20 in 0.5 steps."
+      required: true
+      example: 16
+      selector:
+        number:
+          min: 14
+          max: 20
+          step: 0.5
+          mode: box
+    bloomEnabled:
+      name: "Bloom Enabled"
+      description: "Should the bloom phase be used?"
+      required: true
+      example: true
+      selector:
+        boolean:
+    bloomRatio:
+      name: "Bloom Ratio"
+      description: "Amount of water used in bloom relative to coffee weight (1.0–3.0)."
+      required: true
+      example: 2
+      selector:
+        number:
+          min: 1
+          max: 3
+          step: 0.5
+          mode: box
+    bloomDuration:
+      name: "Bloom Duration (seconds)"
+      description: "Duration of bloom phase, 1–120 seconds."
+      required: true
+      example: 30
+      selector:
+        number:
+          min: 1
+          max: 120
+          step: 1
+          mode: box
+    bloomTemperature:
+      name: "Bloom Temperature (°C)"
+      description: "Temperature for bloom phase, 50–99°C."
+      required: true
+      example: 96
+      selector:
+        number:
+          min: 50
+          max: 99
+          step: 1
+          unit_of_measurement: "°C"
+          mode: box
+    ssPulsesEnabled:
+      name: "Small-sample Pulses Enabled"
+      description: "Enable small-sample pulses?"
+      required: true
+      example: true
+      selector:
+        boolean:
+    ssPulsesNumber:
+      name: "Small-sample Pulses Number"
+      description: "How many pulses? (1–10)."
+      required: true
+      example: 3
+      selector:
+        number:
+          min: 1
+          max: 10
+          step: 1
+          mode: box
+    ssPulsesInterval:
+      name: "Small-sample Pulses Interval (seconds)"
+      description: "Time between small-sample pulses, 5–60."
+      required: true
+      example: 23
+      selector:
+        number:
+          min: 5
+          max: 60
+          step: 1
+          mode: box
+    ssPulseTemperatures:
+      name: "Small-sample Pulse Temperatures"
+      description: "A list of temperatures for each small-sample pulse (e.g. `[96, 97, 98]`)."
+      required: true
+      example: "[96,97,98]"
+      selector:
+        text:
+    batchPulsesEnabled:
+      name: "Batch Pulses Enabled"
+      description: "Enable batch pulses?"
+      required: true
+      example: true
+      selector:
+        boolean:
+    batchPulsesNumber:
+      name: "Batch Pulses Number"
+      description: "Number of batch pulses (1–10)."
+      required: true
+      example: 2
+      selector:
+        number:
+          min: 1
+          max: 10
+          step: 1
+          mode: box
+    batchPulsesInterval:
+      name: "Batch Pulses Interval (seconds)"
+      description: "Time between batch pulses, 5–60."
+      required: true
+      example: 30
+      selector:
+        number:
+          min: 5
+          max: 60
+          step: 1
+          mode: box
+    batchPulseTemperatures:
+      name: "Batch Pulse Temperatures"
+      description: "A list of temperatures for each batch pulse (e.g. `[96, 97]`)."
+      required: true
+      example: "[96,97]"
+      selector:
+        text:
+
+delete_profile:
+  name: "Delete Brew Profile"
+  description: "Delete a brew profile by ID"
+  fields:
+    profile_id:
+      name: "Profile ID"
+      description: "ID of profile to delete (e.g. 'p1')"
+      example: "p1"
+      required: true
+      selector:
+        text:

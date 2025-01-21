@@ -1,0 +1,12 @@
+{
+  "domain": "fellow_aiden",
+  "name": "Fellow Aiden",
+  "version": "0.0.1",
+  "config_flow": true,
+  "documentation": "https://github.com/9b/fellow-aiden",
+  "requirements": [],
+  "codeowners": ["@yourname"],
+  "iot_class": "cloud_polling",
+  "icon": "icon.png",
+  "logo": "logo.png"
+}
