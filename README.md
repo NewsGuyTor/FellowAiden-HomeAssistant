@@ -1,10 +1,10 @@
 # Fellow Aiden Integration for Home Assistant
 
-*Special thanks to [Brandon Dixon (9b)](https://github.com/9b) for creating the [fellow-aiden](https://github.com/9b/fellow-aiden) Python library that laid the groundwork for this integration!*
-
 > *“A good brew is like a good friend: reliable, comforting, and occasionally in need of a little maintenance.”*  
 
 This is a custom integration that brings your coffee brewer into the Home Assistant universe. Because life’s too short for bad coffee and disconnected devices.
+
+*Special thanks to [Brandon Dixon (9b)](https://github.com/9b) for creating the [fellow-aiden](https://github.com/9b/fellow-aiden) Python library that laid the groundwork for this integration!*
 
 ## Table of Contents
 - [Features](#features)
