@@ -1,7 +1,7 @@
 {
   "domain": "fellow",
   "name": "Fellow Aiden",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "config_flow": true,
   "documentation": "https://github.com/NewsGuyTor/Fellow_Aiden-HomeAssistant",
   "requirements": [

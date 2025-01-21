@@ -23,13 +23,11 @@ BINARY_SENSORS = [
     # (key_in_device_config, device_class, friendly_name)
     ("brewing", BinarySensorDeviceClass.RUNNING, "Brewing"),
     ("carafePresent", None, "Carafe Inserted"),
-    # Changed heaterOn to have no device class:
     ("heaterOn", None, "Heater On"),
     # lidClosed inverts for DOOR logic:
     ("lidClosed", BinarySensorDeviceClass.DOOR, "Lid"),
     ("showerHeadPresent", None, "Shower Head Inserted"),
     ("missingWater", BinarySensorDeviceClass.PROBLEM, "Missing Water"),
-    # Removed singleBrewBasketPresent & batchBrewBasketPresent from this list
 ]
 
 
@@ -53,7 +51,6 @@ async def async_setup_entry(
             )
         )
 
-    # Add the new "Basket" sensor that combines single/batch presence
     basket_sensor = AidenBasketSensor(coordinator, entry)
 
     async_add_entities(binary_entities + [basket_sensor], True)
@@ -73,7 +70,6 @@ class FellowAidenBinarySensor(FellowAidenBaseEntity, BinarySensorEntity):
         super().__init__(coordinator)
         self._entry_id = entry.entry_id
         self._key = key
-        # Name changed from "Fellow Aiden X" to "Aiden X"
         self._attr_name = f"Aiden {name}"
         self._attr_unique_id = f"{entry.entry_id}-{key}"
         self._attr_device_class = device_class

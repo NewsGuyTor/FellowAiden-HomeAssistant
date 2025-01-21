@@ -16,7 +16,6 @@ _LOGGER = logging.getLogger(__name__)
 SENSORS = [
     # (key_in_device_config, friendly_name, unit, icon)
     ("chimeVolume", "Chime Volume", None, "mdi:volume-high"),
-    # CHANGED "Total Brewing Cycles" -> "Total Brews"
     ("totalBrewingCycles", "Total Brews", None, "mdi:counter"),
     # We'll interpret totalWaterVolumeL (which is actually ml) and convert to L
     ("totalWaterVolumeL", "Total Water Volume", "L", "mdi:cup-water"),
@@ -75,7 +74,6 @@ class AidenSensor(FellowAidenBaseEntity, SensorEntity):
         super().__init__(coordinator)
         self._entry_id = entry.entry_id
         self._key = key
-        # Changed from "Fellow Aiden X" to "Aiden X"
         self._attr_name = f"Aiden {name}"
         self._attr_unique_id = f"{entry.entry_id}-{key}"
         self._attr_native_unit_of_measurement = unit
@@ -111,7 +109,7 @@ class AidenAverageWaterPerBrewSensor(FellowAidenBaseEntity, SensorEntity):
         self._attr_name = "Aiden Average Water per Brew"
         self._attr_unique_id = f"{entry.entry_id}-avg_water_per_brew"
         self._attr_icon = "mdi:cup-water"
-        self._attr_native_unit_of_measurement = "L"
+        self._attr_native_unit_of_measurement = "mL"
 
     @property
     def native_value(self) -> float | None:
@@ -127,4 +125,4 @@ class AidenAverageWaterPerBrewSensor(FellowAidenBaseEntity, SensorEntity):
         average_ml = total_water_ml / total_brews
 
         # Optionally, round to the nearest whole number
-        return round(average_ml, 0)
+        return round(average_ml)
