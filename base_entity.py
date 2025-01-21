@@ -21,7 +21,7 @@ class FellowAidenBaseEntity(CoordinatorEntity):
         elevation = device_config.get("elevation")  # originally a sensor
         hw_version = None
         if elevation is not None:
-            hw_version = f{elevation}m elevation."
+            hw_version = f"{elevation}m elevation"
 
         return {
             "identifiers": {(DOMAIN, brewer_id)},
