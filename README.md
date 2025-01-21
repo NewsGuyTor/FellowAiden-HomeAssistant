@@ -1,5 +1,7 @@
 # Fellow Aiden Integration for Home Assistant
 
+<img src="device.png" alt="Device Image" align="right" width="200"/>
+
 > *“A good brew is like a good friend: reliable, comforting, and occasionally in need of a little maintenance.”*  
 
 This is a custom integration that brings your coffee brewer into the Home Assistant universe. Because life’s too short for bad coffee and disconnected devices.
