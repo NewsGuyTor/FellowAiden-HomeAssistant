@@ -1,5 +1,9 @@
 """Select entity to list brew profiles from Fellow Aiden."""
+from __future__ import annotations
+
 import logging
+from typing import List
+
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -15,22 +19,23 @@ async def async_setup_entry(
     hass: HomeAssistant, 
     entry: ConfigEntry, 
     async_add_entities: AddEntitiesCallback
-):
+) -> None:
     """Set up select entity listing all brew profiles."""
     coordinator: FellowAidenDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
     async_add_entities([FellowAidenProfilesSelect(coordinator, entry)], True)
 
+
 class FellowAidenProfilesSelect(CoordinatorEntity, SelectEntity):
     """Select entity that shows all Fellow Aiden brew profiles by title."""
 
-    def __init__(self, coordinator: FellowAidenDataUpdateCoordinator, entry: ConfigEntry):
+    def __init__(self, coordinator: FellowAidenDataUpdateCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator)
         self._entry_id = entry.entry_id
         self._attr_unique_id = f"{entry.entry_id}-profile_select"
         self._attr_name = "Fellow Aiden Profiles"
 
     @property
-    def options(self) -> list[str]:
+    def options(self) -> List[str]:
         """Return a list of profile titles."""
         data = self.coordinator.data
         if not data or "profiles" not in data:
@@ -61,14 +66,14 @@ class FellowAidenProfilesSelect(CoordinatorEntity, SelectEntity):
     async def async_select_option(self, option: str) -> None:
         """
         Called when a user selects a profile from the drop-down.
-        This library doesn't have a "set_active_profile" method, so we'll log it only.
-        If the library or API eventually supports applying a profile, do it here.
+
+        Currently, there's no supported "activate profile" method in the underlying library.
+        Log the choice for now. If future functionality is added, place the API call here.
         """
         _LOGGER.info(
-            "Selected profile '%s', but there's no method to activate it in the library.",
+            "User selected profile '%s', but no library method to activate it.",
             option
         )
-        # No actual "activate profile" call in the library. 
-        # If it existed, we'd do something like:
-        # self.coordinator.api.activate_profile(option)
+        # If the library eventually adds support, it might look like:
+        # await self.hass.async_add_executor_job(self.coordinator.api.activate_profile, option)
         return

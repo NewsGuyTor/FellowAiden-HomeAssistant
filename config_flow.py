@@ -1,3 +1,6 @@
+"""Config flow for Fellow Aiden."""
+from __future__ import annotations
+
 import logging
 import voluptuous as vol
 
@@ -63,4 +66,5 @@ class FellowAidenOptionsFlowHandler(config_entries.OptionsFlow):
 
     async def async_step_init(self, user_input=None):
         """Manage the options."""
+        # If you have additional configurable options, add them here.
         return self.async_create_entry(title="", data={})

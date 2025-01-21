@@ -1,4 +1,6 @@
 """Fellow Aiden for Home Assistant."""
+from __future__ import annotations
+
 import logging
 
 from homeassistant.config_entries import ConfigEntry
@@ -17,7 +19,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     password = entry.data["password"]
 
     coordinator = FellowAidenDataUpdateCoordinator(hass, email, password)
-    # Instantiate the library & do the initial refresh (in executor)
     await coordinator.async_config_entry_first_refresh()
 
     hass.data[DOMAIN][entry.entry_id] = coordinator
@@ -32,14 +33,18 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id)
+        hass.data[DOMAIN].pop(entry.entry_id, None)
     return unload_ok
 
 
-def async_register_services(hass: HomeAssistant, coordinator: FellowAidenDataUpdateCoordinator, entry: ConfigEntry) -> None:
+def async_register_services(
+    hass: HomeAssistant,
+    coordinator: FellowAidenDataUpdateCoordinator,
+    entry: ConfigEntry
+) -> None:
     """Register services for creating or deleting profiles."""
 
-    async def async_create_profile(call):
+    async def async_create_profile(call) -> None:
         """Create a brew profile on the Aiden device."""
         data = {
             "profileType": call.data.get("profileType", 0),
@@ -60,7 +65,7 @@ def async_register_services(hass: HomeAssistant, coordinator: FellowAidenDataUpd
         }
         await hass.async_add_executor_job(coordinator.create_profile, data)
 
-    async def async_delete_profile(call):
+    async def async_delete_profile(call) -> None:
         """Delete a brew profile on the Aiden device by ID."""
         pid = call.data.get("profile_id")
         await hass.async_add_executor_job(coordinator.delete_profile, pid)

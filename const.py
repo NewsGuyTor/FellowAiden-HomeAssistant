@@ -1,3 +1,3 @@
 """Constants for Fellow Aiden."""
-DOMAIN = "fellow_aiden"
+DOMAIN = "fellow"
 PLATFORMS = ["sensor", "select", "binary_sensor"]

@@ -2,7 +2,7 @@
     "name": "Fellow Aiden",
     "content_in_root": true,
     "domains": [
-      "fellow_aiden"
+      "fellow"
     ],
     "codeowners": [
       "@NewsGuyTor"

@@ -1,5 +1,9 @@
-# binary_sensor.py
+"""Binary sensor platform for Fellow Aiden."""
+from __future__ import annotations
+
 import logging
+from typing import List
+
 from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
     BinarySensorDeviceClass,
@@ -19,7 +23,7 @@ BINARY_SENSORS = [
     ("brewing", BinarySensorDeviceClass.RUNNING, "Brewing"),
     ("carafePresent", None, "Carafe Inserted"),
     ("heaterOn", BinarySensorDeviceClass.HEAT, "Heater On"),
-    # We'll interpret DOOR as "True=Open" in HA. So we invert device data:
+    # 'lidClosed' inverts the boolean to match Home Assistant's door sensor logic
     ("lidClosed", BinarySensorDeviceClass.DOOR, "Lid"),
     ("showerHeadPresent", None, "Shower Head Inserted"),
     ("singleBrewBasketPresent", None, "Single Basket Inserted"),
@@ -31,24 +35,39 @@ async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback
-):
+) -> None:
     """Set up Fellow Aiden binary sensors."""
     coordinator: FellowAidenDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
 
-    entities = []
+    entities: List[FellowAidenBinarySensor] = []
     for key, device_class, name in BINARY_SENSORS:
-        entities.append(FellowAidenBinarySensor(coordinator, entry, key, name, device_class))
+        entities.append(
+            FellowAidenBinarySensor(
+                coordinator=coordinator,
+                entry=entry,
+                key=key,
+                name=name,
+                device_class=device_class
+            )
+        )
 
-    async_add_entities(entities)
+    async_add_entities(entities, True)
+
 
 class FellowAidenBinarySensor(FellowAidenBaseEntity, BinarySensorEntity):
-    """Binary sensor for a boolean value from device_config."""
+    """Binary sensor for a boolean value from the device_config."""
 
-    def __init__(self, coordinator, entry, key, name, device_class):
+    def __init__(
+        self,
+        coordinator: FellowAidenDataUpdateCoordinator,
+        entry: ConfigEntry,
+        key: str,
+        name: str,
+        device_class: BinarySensorDeviceClass | None
+    ) -> None:
         super().__init__(coordinator)
         self._entry_id = entry.entry_id
         self._key = key
-        # Modify name to something more natural if you like
         self._attr_name = f"Fellow Aiden {name}"
         self._attr_unique_id = f"{entry.entry_id}-{key}"
         self._attr_device_class = device_class
@@ -58,17 +77,16 @@ class FellowAidenBinarySensor(FellowAidenBaseEntity, BinarySensorEntity):
         """
         Return True if the sensor is active, else False.
 
-        For 'lidClosed', device_class=DOOR => True=Open in HA,
-        but the data says 'True=Closed'. We invert it.
+        For 'lidClosed' with device_class=DOOR: 
+        - Home Assistant expects "True => Open" for a DOOR device,
+          but our data returns True => physically closed.
+        So we invert if key == 'lidClosed'.
         """
         device_config = self.coordinator.data.get("device_config", {})
-
         raw_value = device_config.get(self._key)
 
-        # If this is the 'lidClosed' key:
         if self._key == "lidClosed":
-            # Because DOOR means on=OPEN in Home Assistant
-            # and raw_value=True means physically closed => we invert
+            # Invert: if lidClosed=True => physically closed => HA expects 'off'
             return not raw_value
 
         return raw_value

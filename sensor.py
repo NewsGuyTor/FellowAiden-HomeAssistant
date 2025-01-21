@@ -1,4 +1,6 @@
 import logging
+from typing import Any
+
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -10,13 +12,13 @@ from .base_entity import FellowAidenBaseEntity
 
 _LOGGER = logging.getLogger(__name__)
 
+# Standard sensors that pull data from device_config by key
 SENSORS = [
-    # (key_in_device_config, friendly_name, native_unit, icon)
+    # (key_in_device_config, friendly_name, unit, icon)
     ("chimeVolume", "Chime Volume", None, "mdi:volume-high"),
-    # Removed "elevation" since it's now in device info
-    ("ibWaterQuantity", "Water Quantity", "ml", "mdi:cup-water"),
     ("totalBrewingCycles", "Total Brewing Cycles", None, "mdi:counter"),
-    # Possibly also add isAdvanceMode or something else that might make sense as a sensor
+    # We’ll interpret the device’s totalWaterVolumeL (which is actually ml) and convert to L
+    ("totalWaterVolumeL", "Total Water Volume", "L", "mdi:cup-water"),
 ]
 
 
@@ -24,22 +26,51 @@ async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback
-):
+) -> None:
     """Set up numeric or text sensors."""
     coordinator: FellowAidenDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
 
-    entities = []
-    for sensor_info in SENSORS:
-        key, name, unit, icon = sensor_info
-        entities.append(FellowAidenSensor(coordinator, entry, key, name, unit, icon))
+    entities: list[SensorEntity] = []
+
+    # Create regular sensors from the SENSORS list
+    for key, name, unit, icon in SENSORS:
+        entities.append(
+            FellowAidenSensor(
+                coordinator=coordinator,
+                entry=entry,
+                key=key,
+                name=name,
+                unit=unit,
+                icon=icon
+            )
+        )
+
+    # Create the derived sensor: Average Water per Brew (liters per brew)
+    entities.append(
+        FellowAidenAverageWaterPerBrewSensor(
+            coordinator=coordinator,
+            entry=entry
+        )
+    )
 
     async_add_entities(entities, True)
 
 
 class FellowAidenSensor(FellowAidenBaseEntity, SensorEntity):
-    """Sensor for numeric or textual data from device_config."""
+    """
+    Sensor for numeric or textual data from the device_config.
+    If the key is "totalWaterVolumeL", we apply a conversion from ml to L.
+    """
 
-    def __init__(self, coordinator, entry, key, name, unit, icon):
+    def __init__(
+        self,
+        coordinator: FellowAidenDataUpdateCoordinator,
+        entry: ConfigEntry,
+        key: str,
+        name: str,
+        unit: str | None,
+        icon: str | None,
+    ) -> None:
         super().__init__(coordinator)
         self._entry_id = entry.entry_id
         self._key = key
@@ -49,7 +80,47 @@ class FellowAidenSensor(FellowAidenBaseEntity, SensorEntity):
         self._attr_icon = icon
 
     @property
-    def native_value(self):
+    def native_value(self) -> Any:
         """Return the sensor state."""
         device_config = self.coordinator.data.get("device_config", {})
-        return device_config.get(self._key)
+        val = device_config.get(self._key)
+
+        # Convert totalWaterVolumeL from ml to liters if that's the key
+        if self._key == "totalWaterVolumeL" and val is not None:
+            return round(val / 1000.0, 3)  # Keep 3 decimal places, for example
+
+        return val
+
+
+class FellowAidenAverageWaterPerBrewSensor(FellowAidenBaseEntity, SensorEntity):
+    """
+    A derived sensor for average water usage per brew.
+
+    Formula: totalWaterVolume (ml) / totalBrewingCycles → convert to liters.
+    """
+
+    def __init__(
+        self,
+        coordinator: FellowAidenDataUpdateCoordinator,
+        entry: ConfigEntry,
+    ) -> None:
+        super().__init__(coordinator)
+        self._entry_id = entry.entry_id
+        self._attr_name = "Fellow Aiden Average Water per Brew"
+        self._attr_unique_id = f"{entry.entry_id}-avg_water_per_brew"
+        self._attr_icon = "mdi:cup-water"
+        self._attr_native_unit_of_measurement = "L"
+
+    @property
+    def native_value(self) -> float | None:
+        """Compute and return totalWaterVolumeL (in ml) / totalBrewingCycles, in liters."""
+        device_config = self.coordinator.data.get("device_config", {})
+        total_water_ml = device_config.get("totalWaterVolumeL")
+        total_brews = device_config.get("totalBrewingCycles")
+
+        if not total_water_ml or not total_brews or total_brews == 0:
+            return None
+
+        # Convert ml to liters, then divide by the brew count
+        average_liters = (total_water_ml / 1000.0) / total_brews
+        return round(average_liters, 3)  # e.g., keep 3 decimals
