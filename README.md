@@ -1,8 +1,12 @@
 # Fellow Aiden Integration for Home Assistant
 
+*Special thanks to [Brandon Dixon (9b)](https://github.com/9b) for creating the [fellow-aiden](https://github.com/9b/fellow-aiden) Python library that laid the groundwork for this integration!*
+
 > *“A good brew is like a good friend: reliable, comforting, and occasionally in need of a little maintenance.”*  
 
-Welcome to **Fellow Aiden**, a custom integration that brings your coffee brewer into the Home Assistant universe. Because life’s too short for bad coffee and disconnected devices.
+This is a custom integration that brings your coffee brewer into the Home Assistant universe. Because life’s too short for bad coffee and disconnected devices.
+
+This is very alpha ATM. It won't break anything, but it'll likely not function too well either.
 
 ## Table of Contents
 - [Features](#features)
@@ -26,24 +30,61 @@ Welcome to **Fellow Aiden**, a custom integration that brings your coffee brewer
 Don’t worry; we left the comedic potential of coffee puns mostly untapped—**mostly**.
 
 ---
+Certainly! Below is a streamlined **Installation** section for your README, presenting two equal installation methods: **HACS** and **Manual Installation**.
+
+---
 
 ## Installation
 
-1. **Get the Files**  
-   - Download or clone this repository into your Home Assistant’s `config/custom_components/fellow_aiden` folder.  
-     ```bash
-     cd /config/custom_components
-     git clone https://github.com/yourusername/fellow_aiden.git
-     # or manually place the files into fellow_aiden/
+Choose one of the following methods to install the **Fellow Aiden** integration:
+
+### 1. Install via HACS
+
+**Prerequisites:**
+- **Home Assistant** installed and running.
+- **HACS (Home Assistant Community Store)** installed. [HACS Installation Guide](https://hacs.xyz/docs/installation/prerequisites)
+
+**Steps:**
+
+1. **Add the Repository to HACS**
+   - Open Home Assistant and go to **Settings > Devices & Services**.
+   - Click on **HACS** in the sidebar.
+   - Navigate to the **Integrations** tab.
+   - Click the **three-dot menu** (⋮) and select **"Add Repository"**.
+   - Enter the repository URL:
      ```
+     https://github.com/NewsGuyTor/Fellow_Aiden-HomeAssistant/
+     ```
+   - Choose **"Integration"** as the category and click **"Add"**.
+
+2. **Install the Integration**
+   - In HACS, go to the **Integrations** tab.
+   - Click the **"+" (Add)** button.
+   - Search for **"Fellow Aiden"** and select it.
+   - Click **"Install"**.
+
+3. **Configure the Integration**
+   - **Restart Home Assistant**.
+   - After restarting, navigate to **Settings > Devices & Services**.
+   - Click **"Add Integration"**, find **"Fellow Aiden"**, and follow the prompts to log in with your brewer account credentials.
+
+### 2. Manual Installation
+
+**Steps:**
+
+1. **Download or Clone the Repository**
+   ```bash
+   cd /config/custom_components
+   git clone https://github.com/NewsGuyTor/Fellow_Aiden-HomeAssistant.git fellow_aiden
+   ```
    - Ensure the folder is named exactly `fellow_aiden`.
 
-2. **Restart Home Assistant**  
-   - This will allow Home Assistant to discover the new integration.
+2. **Restart Home Assistant**
+   - This allows Home Assistant to detect the new integration.
 
-3. **Add Integration**  
-   - In Home Assistant’s **Settings > Devices & Services**, click **Add Integration**.  
-   - Find “Fellow Aiden,” select it, then follow the prompts to log in with your brewer account credentials.
+3. **Add the Integration**
+   - Go to **Settings > Devices & Services**.
+   - Click **"Add Integration"**, search for **"Fellow Aiden"**, and follow the prompts to log in with your brewer account credentials.
 
 ---
 
@@ -105,4 +146,4 @@ This project is released under the [MIT License](LICENSE). Use it, change it, sh
 
 ---
 
-**Enjoy** your now-connected coffee brewer, and may your mornings be bright, your lid properly closed, and your ratio always 16:1. ☕  
+**Enjoy** your now-connected coffee brewer, and may your mornings be bright, your lid properly closed, and your ratio always 16:10.
