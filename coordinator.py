@@ -8,6 +8,7 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
+# CHANGED HERE: import from 'fellow_aiden' instead of 'fellow'
 from fellow_aiden import FellowAiden
 
 _LOGGER = logging.getLogger(__name__)
@@ -48,16 +49,25 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise UpdateFailed(f"Error updating data: {err}") from err
 
     def _fetch(self) -> dict[str, Any]:
-        """Synchronous call to retrieve brewer info from the library."""
+        """
+        Synchronous call to retrieve brewer info from the library.
+
+        HACK:
+        We call the private method __device() to re-fetch the device data
+        from the cloud. This is not ideal, but works until the library
+        provides a public refresh() method.
+        """
+        # Forcing a re-download of device info from the cloud:
+        self.api._FellowAiden__device()  # <-- HACK: Accessing private method
+
         brewer_name = self.api.get_display_name()
         profiles = self.api.get_profiles()
-        # Access the device_config from the library
-        device_config = self.api._device_config  # or a formal getter if available
+        device_config = self.api._device_config
 
         return {
             "brewer_name": brewer_name,
             "profiles": profiles,
-            "device_config": device_config,  # includes firmware, IP, MAC, SSID, etc.
+            "device_config": device_config,
         }
 
     def create_profile(self, profile_data: dict[str, Any]) -> None:
@@ -65,11 +75,11 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if not self.api:
             raise RuntimeError("Fellow Aiden library not initialized")
         self.api.create_profile(profile_data)
-        self._fetch()  # Refresh internal data (if needed, consider a forced coordinator update)
+        self._fetch()  # Refresh internal data
 
     def delete_profile(self, profile_id: str) -> None:
         """Delete a brew profile."""
         if not self.api:
             raise RuntimeError("Fellow Aiden library not initialized")
         self.api.delete_profile_by_id(profile_id)
-        self._fetch()  # Refresh internal data (same note as above)
+        self._fetch()  # Refresh internal data

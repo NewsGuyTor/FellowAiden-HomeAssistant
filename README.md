@@ -6,13 +6,11 @@
 
 This is a custom integration that brings your coffee brewer into the Home Assistant universe. Because life’s too short for bad coffee and disconnected devices.
 
-This is very alpha ATM. It won't break anything, but it'll likely not function too well either.
-
 ## Table of Contents
 - [Features](#features)
 - [Installation](#installation)
 - [Configuration](#configuration)
-- [Entities & Services](#entities--services)
+- [Services](#services)
 - [FAQ & Troubleshooting](#faq--troubleshooting)
 - [Contributing](#contributing)
 - [License](#license)
@@ -21,18 +19,12 @@ This is very alpha ATM. It won't break anything, but it'll likely not function t
 
 ## Features
 
-- **Brew Profiles:** Create, list, and delete brew profiles from Home Assistant. No more rummaging for the perfect ratio at dawn.
 - **Real-Time Sensors:**
-  - **Binary sensors** for lid status, missing water, baskets inserted, etc.  
-  - **Sensors** for chime volume, brew cycles, and more—because data is beautiful.
+  - **Sensors** for water usage, number of brews, average water per brew and more—because data is beautiful.
+  - **Binary sensors** for brewing, lid status, missing water, baskets inserted, etc.  
 - **Device Info:** Displays firmware version, hardware elevation (for you mountaintop dwellers), Wi-Fi and Bluetooth addresses, plus a witty sense of connectedness.
+- **Brew Profiles:** Create, list, and delete brew profiles from Home Assistant. No more rummaging for the perfect ratio at dawn.
 
----
-## Problems
-
-- **Delay:** This is supposed to update the data every minute, but I don't think it does for some reason.
-- **Broken sensors:** Some of the sensors, like Water Level, seem broken.
-- **General jankyness:** Me and o1 made this in a few hours, still lots of work to be done.
 
 ---
 
@@ -104,17 +96,7 @@ Choose one of the following methods to install the **Fellow Aiden** integration:
 
 ---
 
-## Entities & Services
-
-### Binary Sensors
-- **Lid**: Tells you whether the lid is open or closed (in Home Assistant terms, “on” = open, “off” = closed).  
-- **Carafe Inserted**: Quick check for whether the carafe is in place.  
-- **Missing Water**: Warns you if you forgot to add water. (We’ve all been there. No judgment.)  
-
-### Sensors
-- **Chime Volume**: Current beep level.  
-- **Total Brewing Cycles**: For bragging rights or diagnosing coffee obsession.  
-- **Water Quantity**: Keep an eye on how many milliliters remain.  
+## Services
 
 ### Services
 - **`fellow_aiden.create_profile`**: Takes a JSON with brew settings (ratio, bloom, pulses, etc.) and creates a new profile in the brewer.  
@@ -143,8 +125,8 @@ Choose one of the following methods to install the **Fellow Aiden** integration:
 
 ## License
 
-This project is released under the [MIT License](LICENSE). Use it, change it, share it—just don’t blame us if your coffee cravings skyrocket.
+This project is released under the [GPL License](LICENSE). Use it, change it, share it—just don’t blame us if your coffee cravings skyrocket.
 
 ---
 
-**Enjoy** your now-connected coffee brewer, and may your mornings be bright, your lid properly closed, and your ratio always 16:10.
+**Enjoy** your now-connected coffee brewer, and may your mornings be bright, your lid properly closed, and your water tank never empty.
