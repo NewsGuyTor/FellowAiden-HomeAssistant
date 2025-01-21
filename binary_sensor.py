@@ -26,7 +26,6 @@ BINARY_SENSORS = [
     ("heaterOn", None, "Heater On"),
     # lidClosed inverts for DOOR logic:
     ("lidClosed", BinarySensorDeviceClass.DOOR, "Lid"),
-    ("showerHeadPresent", None, "Shower Head Inserted"),
     ("missingWater", BinarySensorDeviceClass.PROBLEM, "Missing Water"),
 ]
 
