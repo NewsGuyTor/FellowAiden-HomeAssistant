@@ -16,8 +16,9 @@ _LOGGER = logging.getLogger(__name__)
 SENSORS = [
     # (key_in_device_config, friendly_name, unit, icon)
     ("chimeVolume", "Chime Volume", None, "mdi:volume-high"),
-    ("totalBrewingCycles", "Total Brewing Cycles", None, "mdi:counter"),
-    # We’ll interpret the device’s totalWaterVolumeL (which is actually ml) and convert to L
+    # CHANGED "Total Brewing Cycles" -> "Total Brews"
+    ("totalBrewingCycles", "Total Brews", None, "mdi:counter"),
+    # We'll interpret totalWaterVolumeL (which is actually ml) and convert to L
     ("totalWaterVolumeL", "Total Water Volume", "L", "mdi:cup-water"),
 ]
 
@@ -35,7 +36,7 @@ async def async_setup_entry(
     # Create regular sensors from the SENSORS list
     for key, name, unit, icon in SENSORS:
         entities.append(
-            FellowAidenSensor(
+            AidenSensor(
                 coordinator=coordinator,
                 entry=entry,
                 key=key,
@@ -47,7 +48,7 @@ async def async_setup_entry(
 
     # Create the derived sensor: Average Water per Brew (liters per brew)
     entities.append(
-        FellowAidenAverageWaterPerBrewSensor(
+        AidenAverageWaterPerBrewSensor(
             coordinator=coordinator,
             entry=entry
         )
@@ -56,7 +57,7 @@ async def async_setup_entry(
     async_add_entities(entities, True)
 
 
-class FellowAidenSensor(FellowAidenBaseEntity, SensorEntity):
+class AidenSensor(FellowAidenBaseEntity, SensorEntity):
     """
     Sensor for numeric or textual data from the device_config.
     If the key is "totalWaterVolumeL", we apply a conversion from ml to L.
@@ -74,7 +75,8 @@ class FellowAidenSensor(FellowAidenBaseEntity, SensorEntity):
         super().__init__(coordinator)
         self._entry_id = entry.entry_id
         self._key = key
-        self._attr_name = f"Fellow Aiden {name}"
+        # Changed from "Fellow Aiden X" to "Aiden X"
+        self._attr_name = f"Aiden {name}"
         self._attr_unique_id = f"{entry.entry_id}-{key}"
         self._attr_native_unit_of_measurement = unit
         self._attr_icon = icon
@@ -87,16 +89,16 @@ class FellowAidenSensor(FellowAidenBaseEntity, SensorEntity):
 
         # Convert totalWaterVolumeL from ml to liters if that's the key
         if self._key == "totalWaterVolumeL" and val is not None:
-            return round(val / 1000.0, 3)  # Keep 3 decimal places, for example
+            return round(val / 1000.0, 3)  # Keep 3 decimal places
 
         return val
 
 
-class FellowAidenAverageWaterPerBrewSensor(FellowAidenBaseEntity, SensorEntity):
+class AidenAverageWaterPerBrewSensor(FellowAidenBaseEntity, SensorEntity):
     """
     A derived sensor for average water usage per brew.
 
-    Formula: totalWaterVolume (ml) / totalBrewingCycles → convert to liters.
+    Formula: totalWaterVolume (ml) / totalBrews → convert to liters.
     """
 
     def __init__(
@@ -106,14 +108,14 @@ class FellowAidenAverageWaterPerBrewSensor(FellowAidenBaseEntity, SensorEntity):
     ) -> None:
         super().__init__(coordinator)
         self._entry_id = entry.entry_id
-        self._attr_name = "Fellow Aiden Average Water per Brew"
+        self._attr_name = "Aiden Average Water per Brew"
         self._attr_unique_id = f"{entry.entry_id}-avg_water_per_brew"
         self._attr_icon = "mdi:cup-water"
         self._attr_native_unit_of_measurement = "L"
 
     @property
     def native_value(self) -> float | None:
-        """Compute and return totalWaterVolumeL (in ml) / totalBrewingCycles, in liters."""
+        """Compute totalWaterVolumeL (in ml) / totalBrews, in liters."""
         device_config = self.coordinator.data.get("device_config", {})
         total_water_ml = device_config.get("totalWaterVolumeL")
         total_brews = device_config.get("totalBrewingCycles")
@@ -121,6 +123,6 @@ class FellowAidenAverageWaterPerBrewSensor(FellowAidenBaseEntity, SensorEntity):
         if not total_water_ml or not total_brews or total_brews == 0:
             return None
 
-        # Convert ml to liters, then divide by the brew count
+        # Convert ml to liters, then divide by brew count
         average_liters = (total_water_ml / 1000.0) / total_brews
-        return round(average_liters, 3)  # e.g., keep 3 decimals
+        return round(average_liters, 2)
