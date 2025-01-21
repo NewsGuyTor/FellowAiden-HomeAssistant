@@ -28,7 +28,9 @@ This is a custom integration that brings your coffee brewer into the Home Assist
 - **Brew Profiles:** Create, list, and delete brew profiles from Home Assistant. No more rummaging for the perfect ratio at dawn.
 
 ## Screenshot
-<img width="882" alt="Image" src="https://github.com/user-attachments/assets/0fd19320-cdc6-4039-bf6a-58f25018dded" />
+<p align="center">
+<img width="700" alt="Image" src="https://github.com/user-attachments/assets/588db6ce-df8a-4535-b54b-0c679c47e82c" />
+</p>
 
 ---
 
