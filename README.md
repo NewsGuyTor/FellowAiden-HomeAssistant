@@ -46,7 +46,7 @@ Choose one of the following methods to install the **Fellow Aiden** integration:
    - Click the **three-dot menu** (⋮) and select **"Add Repository"**.
    - Enter the repository URL:
      ```
-     https://github.com/NewsGuyTor/Fellow_Aiden-HomeAssistant/
+     https://github.com/NewsGuyTor/FellowAiden-HomeAssistant/
      ```
    - Choose **"Integration"** as the category and click **"Add"**.
 
@@ -68,7 +68,7 @@ Choose one of the following methods to install the **Fellow Aiden** integration:
 1. **Download or Clone the Repository**
    ```bash
    cd /config/custom_components
-   git clone https://github.com/NewsGuyTor/Fellow_Aiden-HomeAssistant.git fellow_aiden
+   git clone https://github.com/NewsGuyTor/FellowAiden-HomeAssistant.git fellow_aiden
    ```
    - Ensure the folder is named exactly `fellow_aiden`.
 
@@ -115,7 +115,7 @@ Choose one of the following methods to install the **Fellow Aiden** integration:
 
 ## Contributing
 
-- **Issues**: Spot a bug, have a feature request, or can’t resist a coffee pun? [Open an issue](https://github.com/yourusername/fellow_aiden/issues).  
+- **Issues**: Spot a bug, have a feature request, or can’t resist a coffee pun? [Open an issue](https://github.com/NewsGuyTor/FellowAiden-HomeAssistant/issues).  
 - **PRs**: Fork, code, and send a pull request. We welcome improvements—just keep code style and good taste in brew puns consistent.  
 - **Local Testing**: If you break something, revert changes or blame the brew cycle. Either is acceptable.
 
@@ -123,7 +123,7 @@ Choose one of the following methods to install the **Fellow Aiden** integration:
 
 ## License
 
-This project is released under the [GPL License](LICENSE). Use it, change it, share it—just don’t blame us if your coffee cravings skyrocket.
+This project is released under the [GPL-3.0 license](LICENSE). Use it, change it, share it—just don’t blame us if your coffee cravings skyrocket.
 
 ---
 
