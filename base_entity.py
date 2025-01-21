@@ -1,8 +1,11 @@
 # base_entity.py
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers import device_registry as dr
+import logging
 
 from .const import DOMAIN
+
+_LOGGER = logging.getLogger(__name__)
 
 class FellowAidenBaseEntity(CoordinatorEntity):
     """Base class for all Fellow Aiden entities, attaching them to one device."""
@@ -17,11 +20,15 @@ class FellowAidenBaseEntity(CoordinatorEntity):
         fw_version = device_config.get("firmwareVersion")
         wifi_mac = device_config.get("wifiMacAddress")
         bt_mac = device_config.get("btMacAddress")
-        # We'll store "Elevation" in hw_version for the device
+        # Store "Elevation" in hw_version for the device
         elevation = device_config.get("elevation")  # originally a sensor
         hw_version = None
         if elevation is not None:
+            # Example: "Elevation: 120 m"
             hw_version = f"{elevation}m elevation"
+
+        # Set picture to the raw GitHub URL
+        picture_url = "https://raw.githubusercontent.com/NewsGuyTor/Fellow_Aiden-HomeAssistant/main/device.png"
 
         return {
             "identifiers": {(DOMAIN, brewer_id)},
@@ -35,6 +42,8 @@ class FellowAidenBaseEntity(CoordinatorEntity):
                 (dr.CONNECTION_NETWORK_MAC, wifi_mac),
                 (dr.CONNECTION_BLUETOOTH, bt_mac),
             },
+            # Add the device picture
+            "picture": picture_url
         }
 
     @property
