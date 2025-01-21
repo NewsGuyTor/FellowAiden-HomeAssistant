@@ -27,11 +27,6 @@ This is very alpha ATM. It won't break anything, but it'll likely not function t
   - **Sensors** for chime volume, brew cycles, and more—because data is beautiful.
 - **Device Info:** Displays firmware version, hardware elevation (for you mountaintop dwellers), Wi-Fi and Bluetooth addresses, plus a witty sense of connectedness.
 
-Don’t worry; we left the comedic potential of coffee puns mostly untapped—**mostly**.
-
----
-Certainly! Below is a streamlined **Installation** section for your README, presenting two equal installation methods: **HACS** and **Manual Installation**.
-
 ---
 
 ## Installation
@@ -41,8 +36,7 @@ Choose one of the following methods to install the **Fellow Aiden** integration:
 ### 1. Install via HACS
 
 **Prerequisites:**
-- **Home Assistant** installed and running.
-- **HACS (Home Assistant Community Store)** installed. [HACS Installation Guide](https://hacs.xyz/docs/installation/prerequisites)
+- **Home Assistant** and **HACS (Home Assistant Community Store)** installed. [HACS Installation Guide](https://hacs.xyz/docs/installation/prerequisites)
 
 **Steps:**
 
