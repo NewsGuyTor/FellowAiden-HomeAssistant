@@ -13,11 +13,12 @@ _LOGGER = logging.getLogger(__name__)
 SENSORS = [
     # (key_in_device_config, friendly_name, native_unit, icon)
     ("chimeVolume", "Chime Volume", None, "mdi:volume-high"),
-    ("elevation", "Elevation", "m", "mdi:image-filter-hdr"),
+    # Removed "elevation" since it's now in device info
     ("ibWaterQuantity", "Water Quantity", "ml", "mdi:cup-water"),
     ("totalBrewingCycles", "Total Brewing Cycles", None, "mdi:counter"),
-    # Possibly also add isAdvanceMode or something else that might make sense as sensor
+    # Possibly also add isAdvanceMode or something else that might make sense as a sensor
 ]
+
 
 async def async_setup_entry(
     hass: HomeAssistant,

@@ -13,12 +13,16 @@ class FellowAidenBaseEntity(CoordinatorEntity):
         data = self.coordinator.data
         device_config = data.get("device_config", {})
 
-        # Extract necessary device information
         brewer_id = device_config.get("id") or self._entry_id
         fw_version = device_config.get("firmwareVersion")
         wifi_mac = device_config.get("wifiMacAddress")
         bt_mac = device_config.get("btMacAddress")
-        # local_ip = device_config.get("localIpAddress")  # If you want a config URL, see below
+        # We'll store "Elevation" in hw_version for the device
+        elevation = device_config.get("elevation")  # originally a sensor
+        hw_version = None
+        if elevation is not None:
+            # Example: "Elevation: 120 m"
+            hw_version = f"Elevation: {elevation} m"
 
         return {
             "identifiers": {(DOMAIN, brewer_id)},
@@ -26,32 +30,29 @@ class FellowAidenBaseEntity(CoordinatorEntity):
             "manufacturer": "Fellow",
             "model": "Aiden",
             "sw_version": fw_version,
+            # Use hw_version to hold the elevation text
+            "hw_version": hw_version,
             "connections": {
                 (dr.CONNECTION_NETWORK_MAC, wifi_mac),
                 (dr.CONNECTION_BLUETOOTH, bt_mac),
             },
-            # If you want to display local IP in the device page, you can do:
-            # "configuration_url": f"http://{local_ip}" if local_ip else None,
         }
 
     @property
     def extra_state_attributes(self):
         """
-        Return extra attributes for this entity, e.g. WiFi SSID, local IP, etc.
-        These appear in Developer Tools > States.
+        Return extra attributes for this entity, for any
+        additional info that doesn't fit in device_info.
+        For example, if you want to store WiFi SSID or local IP here.
         """
         data = self.coordinator.data
         device_config = data.get("device_config", {})
         attrs = {}
 
-        # Add WiFi SSID if available
-        wifi_ssid = device_config.get("wifiSSID")
-        if wifi_ssid:
-            attrs["wifi_ssid"] = wifi_ssid
-
-        # If you want to show local IP as an attribute:
-        local_ip = device_config.get("localIpAddress")
-        if local_ip:
-            attrs["local_ip_address"] = local_ip
+        # If you want to expose WiFi SSID or local IP as attributes:
+        if "wifiSSID" in device_config:
+            attrs["wifi_ssid"] = device_config["wifiSSID"]
+        if "localIpAddress" in device_config:
+            attrs["local_ip_address"] = device_config["localIpAddress"]
 
         return attrs
