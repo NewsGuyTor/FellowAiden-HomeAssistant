@@ -17,9 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 BINARY_SENSORS = [
     # (key_in_device_config, device_class, friendly_name)
     ("brewing", BinarySensorDeviceClass.RUNNING, "Brewing"),
-    # For baskets & carafe, "presence" was awkward; use None
     ("carafePresent", None, "Carafe Inserted"),
-    ("cleaning", BinarySensorDeviceClass.PROBLEM, "Cleaning"),
     ("heaterOn", BinarySensorDeviceClass.HEAT, "Heater On"),
     # We'll interpret DOOR as "True=Open" in HA. So we invert device data:
     ("lidClosed", BinarySensorDeviceClass.DOOR, "Lid"),
