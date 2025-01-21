@@ -28,6 +28,13 @@ This is very alpha ATM. It won't break anything, but it'll likely not function t
 - **Device Info:** Displays firmware version, hardware elevation (for you mountaintop dwellers), Wi-Fi and Bluetooth addresses, plus a witty sense of connectedness.
 
 ---
+## Problems
+
+- **Delay:** This is supposed to update the data every minute, but I don't think it does for some reason.
+- **Broken sensors:** Some of the sensors, like Water Level, seem broken.
+- **General jankyness:** Me and o1 made this in a few hours, still lots of work to be done.
+
+---
 
 ## Installation
 
