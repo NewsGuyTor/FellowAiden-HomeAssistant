@@ -97,8 +97,6 @@ Choose one of the following methods to install the **Fellow Aiden** integration:
 ---
 
 ## Services
-
-### Services
 - **`fellow_aiden.create_profile`**: Takes a JSON with brew settings (ratio, bloom, pulses, etc.) and creates a new profile in the brewer.  
 - **`fellow_aiden.delete_profile`**: Remove that ill-fated experimental profile from existence.
 
