@@ -5,8 +5,8 @@ from datetime import timedelta
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.core import HomeAssistant
 
-from .external import FellowAiden
-from .external.profile import CoffeeProfile
+from fellow_aiden import FellowAiden
+from fellow_aiden.profile import CoffeeProfile
 
 _LOGGER = logging.getLogger(__name__)
 
