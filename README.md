@@ -29,7 +29,7 @@ This is a custom integration that brings your coffee brewer into the Home Assist
 
 ## Screenshot
 <p align="center">
-<img width="720" alt="Image" src="https://github.com/user-attachments/assets/87c73d85-0160-4478-ad22-7acaf35de88f" />
+<img width="720" alt="Image" src="https://github.com/user-attachments/assets/4074fd60-7e4d-4497-aa27-070cc5b44d5d" />
 </p>
 
 ---
