@@ -8,6 +8,9 @@ This is a custom integration that brings your coffee brewer into the Home Assist
 
 *Special thanks to [Brandon Dixon (9b)](https://github.com/9b) for creating the [fellow-aiden](https://github.com/9b/fellow-aiden) Python library that laid the groundwork for this integration!*
 
+##    
+<sub>You might also like my [Brew.link to Aiden](https://greasyfork.org/en/scripts/524547-brew-link-to-aiden) userscript to send Brew.link profiles directly to your Fellow Aiden.</sub>
+
 ## Table of Contents
 - [Features](#features)
 - [Installation](#installation)
