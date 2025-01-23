@@ -82,7 +82,7 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         _LOGGER.debug(f"Fetched profiles: {profiles}")
         _LOGGER.debug(f"Fetched device config: {device_config}")
 
-        if not brewer_name or not profiles or not device_config:
+        if not brewer_name or not device_config:
             _LOGGER.error("Incomplete data fetched from Fellow Aiden.")
             raise UpdateFailed("Incomplete data fetched from Fellow Aiden.")
 
