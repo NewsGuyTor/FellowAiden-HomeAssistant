@@ -3,7 +3,7 @@
   "name": "Fellow Aiden",
   "version": "0.3.1",
   "config_flow": true,
-  "documentation": "https://github.com/NewsGuyTor/Fellow_Aiden-HomeAssistant",
+  "documentation": "https://github.com/NewsGuyTor/FellowAiden-HomeAssistant",
   "requirements": [
     "fellow-aiden>=0.0.14"
   ],
