@@ -1,12 +1,10 @@
 {
   "domain": "fellow",
   "name": "Fellow Aiden",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "config_flow": true,
   "documentation": "https://github.com/NewsGuyTor/FellowAiden-HomeAssistant",
-  "requirements": [
-    "fellow-aiden>=0.0.14"
-  ],
+  "requirements": [],
   "codeowners": ["@NewsGuyTor"],
   "iot_class": "cloud_polling",
   "icon": "icon.png",
