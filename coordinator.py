@@ -8,7 +8,7 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from fellow_aiden import FellowAiden
+from .fellow_aiden import FellowAiden
 
 _LOGGER = logging.getLogger(__name__)
 

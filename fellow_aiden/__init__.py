@@ -5,8 +5,8 @@ import re
 import requests
 import sys
 from difflib import SequenceMatcher
-from fellow_aiden.profile import CoffeeProfile
-from fellow_aiden.schedule import CoffeeSchedule
+from .profile import CoffeeProfile
+from .schedule import CoffeeSchedule
 from pydantic import ValidationError
 
 

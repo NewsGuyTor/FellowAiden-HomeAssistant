@@ -8,7 +8,7 @@ from homeassistant import config_entries
 from homeassistant.core import callback
 import homeassistant.helpers.config_validation as cv
 
-from fellow_aiden import FellowAiden
+from .fellow_aiden import FellowAiden
 
 from .const import DOMAIN
 
