@@ -106,3 +106,68 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise RuntimeError("Fellow Aiden library not initialized")
         self.api.delete_profile_by_id(profile_id)
         self._fetch()  # Refresh internal data
+
+    def create_schedule(self, schedule_data: dict[str, Any]) -> None:
+        """Create a new brew schedule."""
+        if not self.api:
+            raise RuntimeError("Fellow Aiden library not initialized")
+        self.api.create_schedule(schedule_data)
+        self._fetch()  # Refresh internal data
+
+    def delete_schedule(self, schedule_id: str) -> None:
+        """Delete a brew schedule."""
+        if not self.api:
+            raise RuntimeError("Fellow Aiden library not initialized")
+        self.api.delete_schedule_by_id(schedule_id)
+        self._fetch()  # Refresh internal data
+
+    def toggle_schedule(self, schedule_id: str, enabled: bool) -> None:
+        """Enable or disable a brew schedule."""
+        if not self.api:
+            raise RuntimeError("Fellow Aiden library not initialized")
+        self.api.toggle_schedule(schedule_id, enabled)
+        self._fetch()  # Refresh internal data
+
+    def start_brew(self, profile_id: str, water_amount: int = None) -> None:
+        """Start a brew by creating a temporary schedule 1 minute in the future."""
+        if not self.api:
+            raise RuntimeError("Fellow Aiden library not initialized")
+        
+        try:
+            # Calculate time 1 minute from now
+            from datetime import datetime, timedelta
+            now = datetime.now()
+            brew_time = now + timedelta(minutes=1)
+            seconds_from_start_of_day = (brew_time.hour * 3600 + 
+                                       brew_time.minute * 60 + 
+                                       brew_time.second)
+            
+            # Use default water amount if not specified
+            if not water_amount:
+                water_amount = 420  # Default 420ml
+            
+            # Create a temporary schedule for today only
+            weekday = brew_time.weekday()  # 0=Monday, 6=Sunday
+            days = [False] * 7  # Sunday first for API
+            
+            # Convert weekday to Sunday-first format (API expects Sunday=0)
+            if weekday == 6:  # Sunday
+                days[0] = True
+            else:  # Monday=1, Tuesday=2, etc.
+                days[weekday + 1] = True
+            
+            schedule_data = {
+                "days": days,
+                "secondFromStartOfTheDay": seconds_from_start_of_day,
+                "enabled": True,
+                "amountOfWater": water_amount,
+                "profileId": profile_id,
+            }
+            
+            _LOGGER.info(f"Creating temporary brew schedule for {brew_time.strftime('%H:%M:%S')} with profile {profile_id}")
+            self.api.create_schedule(schedule_data)
+            self._fetch()  # Refresh internal data
+            
+        except Exception as e:
+            _LOGGER.error(f"Failed to start brew: {e}")
+            raise RuntimeError(f"Failed to start brew: {e}") from e

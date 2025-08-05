@@ -156,3 +156,161 @@ delete_profile:
       required: true
       selector:
         text:
+
+create_schedule:
+  name: "Create Brew Schedule"
+  description: "Create a new brew schedule on the Fellow Aiden device. ⚠️ WARNING: Ensure carafe/cup is in place before scheduled brew time to prevent spills!"
+  fields:
+    monday:
+      name: "Monday"
+      description: "Enable brewing on Monday"
+      required: false
+      default: false
+      selector:
+        boolean:
+    tuesday:
+      name: "Tuesday"
+      description: "Enable brewing on Tuesday"
+      required: false
+      default: false
+      selector:
+        boolean:
+    wednesday:
+      name: "Wednesday"
+      description: "Enable brewing on Wednesday"
+      required: false
+      default: false
+      selector:
+        boolean:
+    thursday:
+      name: "Thursday"
+      description: "Enable brewing on Thursday"
+      required: false
+      default: false
+      selector:
+        boolean:
+    friday:
+      name: "Friday"
+      description: "Enable brewing on Friday"
+      required: false
+      default: false
+      selector:
+        boolean:
+    saturday:
+      name: "Saturday"
+      description: "Enable brewing on Saturday"
+      required: false
+      default: false
+      selector:
+        boolean:
+    sunday:
+      name: "Sunday"
+      description: "Enable brewing on Sunday"
+      required: false
+      default: false
+      selector:
+        boolean:
+    secondFromStartOfTheDay:
+      name: "Time of Day (seconds)"
+      description: "Time in seconds from start of day (0-86399). E.g., 6:30 AM = 23400"
+      required: true
+      example: 23400
+      selector:
+        number:
+          min: 0
+          max: 86399
+          step: 1
+          mode: box
+    amountOfWater:
+      name: "Water Amount (mL)"
+      description: "Amount of water to use for brewing (150-1500 mL)"
+      required: true
+      example: 500
+      selector:
+        number:
+          min: 150
+          max: 1500
+          step: 1
+          unit_of_measurement: "mL"
+          mode: box
+    profileName:
+      name: "Profile Name"
+      description: "Name of the brew profile to use (e.g. 'My Morning Coffee'). You can find profile names in the Fellow Aiden Profiles entity."
+      required: true
+      example: "My Morning Coffee"
+      selector:
+        text:
+    profileId:
+      name: "Profile ID (Alternative)"
+      description: "ID of the brew profile to use instead of name (e.g. 'p1', 'plocal1'). Only use if you prefer IDs over names."
+      required: false
+      example: "p1"
+      selector:
+        text:
+    enabled:
+      name: "Enabled"
+      description: "Whether the schedule should be enabled"
+      required: false
+      default: true
+      selector:
+        boolean:
+
+delete_schedule:
+  name: "Delete Brew Schedule"
+  description: "Delete a brew schedule by ID"
+  fields:
+    schedule_id:
+      name: "Schedule ID"
+      description: "ID of schedule to delete"
+      required: true
+      selector:
+        text:
+
+toggle_schedule:
+  name: "Enable/Disable Brew Schedule"
+  description: "Enable or disable a brew schedule"
+  fields:
+    schedule_id:
+      name: "Schedule ID"
+      description: "ID of schedule to toggle"
+      required: true
+      selector:
+        text:
+    enabled:
+      name: "Enabled"
+      description: "Enable or disable the schedule"
+      required: true
+      default: true
+      selector:
+        boolean:
+
+start_brew:
+  name: "Start Brew Now"
+  description: "Start an immediate brew with the specified profile (scheduled 1 minute from now). ⚠️ WARNING: Ensure carafe/cup is in place to prevent spills!"
+  fields:
+    profileName:
+      name: "Profile Name"
+      description: "Name of the brew profile to use (optional, uses default if not specified). You can find profile names in the Fellow Aiden Profiles entity."
+      required: false
+      example: "My Morning Coffee"
+      selector:
+        text:
+    profile_id:
+      name: "Profile ID (Alternative)"
+      description: "ID of the brew profile to use instead of name (optional, uses default if not specified)"
+      required: false
+      example: "p1"
+      selector:
+        text:
+    water_amount:
+      name: "Water Amount (mL)"
+      description: "Amount of water to use for brewing (optional)"
+      required: false
+      example: 500
+      selector:
+        number:
+          min: 150
+          max: 1500
+          step: 1
+          unit_of_measurement: "mL"
+          mode: box
