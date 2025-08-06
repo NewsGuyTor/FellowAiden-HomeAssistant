@@ -9,6 +9,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 from homeassistant.helpers import storage
 
+from .const import HISTORY_RETENTION_DAYS, MIN_HISTORICAL_DATA_FOR_ACCURACY
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -152,8 +154,8 @@ class BrewHistoryManager:
             data_changed = True
         
         if data_changed:
-            # Clean old records (keep 1 year of data)
-            cutoff_date = now - timedelta(days=365)
+            # Clean old records based on retention policy
+            cutoff_date = now - timedelta(days=HISTORY_RETENTION_DAYS)
             self._clean_old_records(cutoff_date)
             
             # Save updated history
@@ -183,7 +185,7 @@ class BrewHistoryManager:
 
     def get_average_time_between_brews(self) -> float | None:
         """Calculate average time between brews in hours."""
-        if len(self._brew_history) < 2:
+        if len(self._brew_history) < MIN_HISTORICAL_DATA_FOR_ACCURACY:
             return None
         
         # Get timestamps of brews
@@ -195,7 +197,7 @@ class BrewHistoryManager:
             except (ValueError, KeyError):
                 continue
         
-        if len(timestamps) < 2:
+        if len(timestamps) < MIN_HISTORICAL_DATA_FOR_ACCURACY:
             return None
         
         # Sort timestamps

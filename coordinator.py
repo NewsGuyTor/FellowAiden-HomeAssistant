@@ -11,6 +11,11 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .fellow_aiden import FellowAiden
 from .brew_history import BrewHistoryManager
+from .const import (
+    DEFAULT_UPDATE_INTERVAL_MINUTES,
+    DEFAULT_WATER_AMOUNT_ML,
+    BREW_START_DELAY_MINUTES,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,7 +34,7 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             hass,
             _LOGGER,
             name="fellow_aiden_coordinator",
-            update_interval=timedelta(minutes=1),
+            update_interval=timedelta(minutes=DEFAULT_UPDATE_INTERVAL_MINUTES),
             config_entry=entry,
         )
 
@@ -208,7 +213,7 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._fetch(verbose_logging=True)  # Refresh internal data
 
     def start_brew(self, profile_id: str, water_amount: int = None) -> None:
-        """Start a brew by creating a temporary schedule 2 minutes in the future."""
+        """Start a brew by creating a temporary schedule with configured delay."""
         if not self.api:
             raise RuntimeError("Fellow Aiden library not initialized")
 
@@ -216,17 +221,17 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         _LOGGER.info(f"Profile ID: {profile_id}, Water Amount: {water_amount}")
 
         try:
-            # Calculate time 2 minutes from now
+            # Calculate time with configured delay from now
             from datetime import datetime, timedelta
             now = datetime.now()
-            brew_time = now + timedelta(minutes=2)
+            brew_time = now + timedelta(minutes=BREW_START_DELAY_MINUTES)
             seconds_from_start_of_day = (brew_time.hour * 3600 +
                                        brew_time.minute * 60 +
                                        brew_time.second)
 
             # Use default water amount if not specified
             if not water_amount:
-                water_amount = 420  # Default 420ml
+                water_amount = DEFAULT_WATER_AMOUNT_ML
 
             # Create a temporary schedule for today only
             weekday = brew_time.weekday()  # 0=Monday, 6=Sunday

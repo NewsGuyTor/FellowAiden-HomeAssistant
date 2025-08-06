@@ -7,7 +7,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from .const import DOMAIN, TIMESTAMP_2024_01_01, MIN_VALID_YEAR, MIN_HISTORICAL_DATA_FOR_ACCURACY
 from .coordinator import FellowAidenDataUpdateCoordinator
 from .base_entity import FellowAidenBaseEntity
 
@@ -211,8 +211,8 @@ class AidenBrewTimeSensor(FellowAidenBaseEntity, SensorEntity):
                 return None
             # Convert Unix timestamp to a datetime object
             brew_datetime = datetime.fromtimestamp(timestamp_int)
-            # Validate timestamp (e.g., after year 2023)
-            if brew_datetime.year < 2023:
+            # Validate timestamp (e.g., after minimum valid year)
+            if brew_datetime.year < MIN_VALID_YEAR:
                 return None
             # Format datetime for display (ISO8601 format)
             return brew_datetime.strftime("%Y-%m-%d %H:%M:%S")
@@ -257,9 +257,9 @@ class AidenLastBrewDurationSensor(FellowAidenBaseEntity, SensorEntity):
             # Validate timestamps to avoid negative durations or epoch times
             if start_timestamp == 0 or end_timestamp == 0:
                 return None
-            if start_timestamp < 1704067201:  # Timestamp before 2024-01-01
+            if start_timestamp < TIMESTAMP_2024_01_01:  # Timestamp before 2024-01-01
                 return None
-            if end_timestamp < 1704067201:
+            if end_timestamp < TIMESTAMP_2024_01_01:
                 return None
 
             duration = end_timestamp - start_timestamp
@@ -304,7 +304,7 @@ class AidenAverageTimeBetweenBrewsSensor(FellowAidenBaseEntity, SensorEntity):
         history_count = len(self.coordinator.history_manager._brew_history)
         return {
             "historical_brews": history_count,
-            "accuracy": "High - based on actual historical data" if history_count >= 2 else "Low - insufficient historical data",
+            "accuracy": "High - based on actual historical data" if history_count >= MIN_HISTORICAL_DATA_FOR_ACCURACY else "Low - insufficient historical data",
             "note": f"Calculated from {history_count} recorded brews"
         }
 
@@ -349,7 +349,7 @@ class AidenLastBrewTimeSensor(FellowAidenBaseEntity, SensorEntity):
 
         try:
             timestamp_int = int(end_time_str)
-            if timestamp_int == 0 or timestamp_int < 1704067201:  # Before 2024
+            if timestamp_int == 0 or timestamp_int < TIMESTAMP_2024_01_01:  # Before 2024
                 return None
             # Create timezone-aware datetime
             return dt_util.utc_from_timestamp(timestamp_int)
@@ -530,7 +530,7 @@ class AidenAverageBrewDurationSensor(FellowAidenBaseEntity, SensorEntity):
 
             if start_timestamp == 0 or end_timestamp == 0:
                 return None
-            if start_timestamp < 1704067201 or end_timestamp < 1704067201:
+            if start_timestamp < TIMESTAMP_2024_01_01 or end_timestamp < TIMESTAMP_2024_01_01:
                 return None
 
             duration_seconds = end_timestamp - start_timestamp

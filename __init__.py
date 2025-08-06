@@ -8,7 +8,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceResponse, SupportsResponse
 from homeassistant.exceptions import ServiceValidationError
 
-from .const import DOMAIN, PLATFORMS
+from .const import DOMAIN, PLATFORMS, DEFAULT_WATER_AMOUNT_ML, DEFAULT_PROFILE_TYPE
 from .coordinator import FellowAidenDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -92,7 +92,7 @@ def async_register_services(hass: HomeAssistant) -> None:
         try:
             coordinator = get_coordinator()
             data = {
-                "profileType": call.data.get("profileType", 0),
+                "profileType": call.data.get("profileType", DEFAULT_PROFILE_TYPE),
                 "title": call.data["title"],
                 "ratio": call.data["ratio"],
                 "bloomEnabled": call.data["bloomEnabled"],

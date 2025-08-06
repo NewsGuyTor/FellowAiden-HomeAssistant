@@ -2,6 +2,7 @@
 from pydantic import BaseModel, field_validator, ValidationError
 from typing import List
 import re
+from ..const import MIN_WATER_AMOUNT_ML, MAX_WATER_AMOUNT_ML
 
 # Regular expression for profileId: either "p" followed by digits or "plocal" followed by digits
 PROFILE_ID_REGEX = re.compile(r'^(p|plocal)\d+$')
@@ -32,8 +33,8 @@ class CoffeeSchedule(BaseModel):
     @field_validator('amountOfWater')
     @classmethod
     def validate_amount_of_water(cls, v):
-        if not (150 <= v <= 1500):
-            raise ValueError("amountOfWater must be between 150 and 1500.")
+        if not (MIN_WATER_AMOUNT_ML <= v <= MAX_WATER_AMOUNT_ML):
+            raise ValueError(f"amountOfWater must be between {MIN_WATER_AMOUNT_ML} and {MAX_WATER_AMOUNT_ML}.")
         return v
 
     @field_validator('profileId')
