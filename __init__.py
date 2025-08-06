@@ -42,6 +42,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     else:
         _LOGGER.debug("Services already registered, skipping")
 
+    # Set up options update listener
+    entry.async_on_unload(entry.add_update_listener(async_update_options))
+
     _LOGGER.info("Fellow Aiden integration setup completed successfully")
     return True
 
@@ -52,6 +55,12 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id, None)
     return unload_ok
+
+
+async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Update options when they change."""
+    _LOGGER.debug("Options updated, reloading integration to apply new update interval")
+    await hass.config_entries.async_reload(entry.entry_id)
 
 
 def async_register_services(hass: HomeAssistant) -> None:

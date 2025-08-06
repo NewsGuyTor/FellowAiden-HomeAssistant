@@ -30,11 +30,16 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.api: FellowAiden | None = None
         self.history_manager = BrewHistoryManager(hass, entry.entry_id)
 
+        # Get update interval from options or use default
+        update_interval_seconds = entry.options.get(
+            "update_interval_seconds", DEFAULT_UPDATE_INTERVAL_MINUTES * 60
+        )
+
         super().__init__(
             hass,
             _LOGGER,
             name="fellow_aiden_coordinator",
-            update_interval=timedelta(minutes=DEFAULT_UPDATE_INTERVAL_MINUTES),
+            update_interval=timedelta(seconds=update_interval_seconds),
             config_entry=entry,
         )
 

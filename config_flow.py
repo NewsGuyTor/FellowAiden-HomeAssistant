@@ -10,7 +10,7 @@ import homeassistant.helpers.config_validation as cv
 
 from .fellow_aiden import FellowAiden
 
-from .const import DOMAIN
+from .const import DOMAIN, DEFAULT_UPDATE_INTERVAL_MINUTES, MIN_UPDATE_INTERVAL_SECONDS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -67,4 +67,36 @@ class FellowAidenOptionsFlowHandler(config_entries.OptionsFlow):
 
     async def async_step_init(self, user_input=None):
         """Manage the options."""
-        return self.async_create_entry(title="", data={})
+        errors = {}
+        
+        if user_input is not None:
+            # Validate update interval
+            update_interval_seconds = user_input.get("update_interval_seconds")
+            if update_interval_seconds < MIN_UPDATE_INTERVAL_SECONDS:
+                errors["update_interval_seconds"] = "too_fast"
+            else:
+                return self.async_create_entry(title="", data=user_input)
+
+        # Get current values or defaults
+        current_interval = self.config_entry.options.get(
+            "update_interval_seconds", DEFAULT_UPDATE_INTERVAL_MINUTES * 60
+        )
+
+        data_schema = vol.Schema({
+            vol.Optional(
+                "update_interval_seconds",
+                default=current_interval,
+                description="Advanced: Update interval in seconds (minimum 30s, default 60s)"
+            ): vol.All(vol.Coerce(int), vol.Range(min=MIN_UPDATE_INTERVAL_SECONDS, max=300))
+        })
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=data_schema,
+            errors=errors,
+            description_placeholders={
+                "current_interval": str(current_interval),
+                "min_interval": str(MIN_UPDATE_INTERVAL_SECONDS)
+            },
+            last_step=True,
+        )

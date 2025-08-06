@@ -1,0 +1,242 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Fellow Aiden",
+        "description": "Enter your Fellow Aiden account credentials.",
+        "data": {
+          "email": "Email",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "auth": "Invalid email or password"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Configure Fellow Aiden Advanced Options",
+        "description": "Adjust advanced settings. Note: Changing the update interval will restart the integration.",
+        "data": {
+          "update_interval_seconds": "Update Interval (seconds)"
+        },
+        "data_description": {
+          "update_interval_seconds": "How often to poll the Fellow Aiden cloud (minimum 30 seconds, default 60 seconds). Lower values provide more responsive data but may impact performance."
+        }
+      }
+    },
+    "error": {
+      "too_fast": "Update interval must be at least 30 seconds to avoid overloading the Fellow servers"
+    }
+  },
+  "services": {
+    "create_profile": {
+      "name": "Create Brew Profile",
+      "description": "Create a new brew profile on the Fellow Aiden device.",
+      "fields": {
+        "profile_type": {
+          "name": "Profile Type",
+          "description": "Numeric profile type"
+        },
+        "title": {
+          "name": "Profile Title",
+          "description": "Name of the brew profile"
+        },
+        "ratio": {
+          "name": "Brew Ratio",
+          "description": "Coffee-to-water ratio (e.g. 16 → 1:16 ratio). Must be one of 14–20 in 0.5 steps."
+        },
+        "bloom_enabled": {
+          "name": "Bloom Enabled",
+          "description": "Should the bloom phase be used?"
+        },
+        "bloom_ratio": {
+          "name": "Bloom Ratio",
+          "description": "Amount of water used in bloom relative to coffee weight (1.0–3.0)."
+        },
+        "bloom_duration": {
+          "name": "Bloom Duration (seconds)",
+          "description": "Duration of bloom phase, 1–120 seconds."
+        },
+        "bloom_temperature": {
+          "name": "Bloom Temperature (°C)",
+          "description": "Temperature for bloom phase, 50–99°C."
+        },
+        "ss_pulses_enabled": {
+          "name": "Single Serve Pulses Enabled",
+          "description": "Enable pulses for Single Serve brewing?"
+        },
+        "ss_pulses_number": {
+          "name": "Single Serve Pulses Number",
+          "description": "How many pulses for Single Serve brewing? (1–10)."
+        },
+        "ss_pulses_interval": {
+          "name": "Single Serve Pulses Interval (seconds)",
+          "description": "Time between Single Serve pulses, 5–60."
+        },
+        "ss_pulse_temperatures": {
+          "name": "Single Serve Pulse Temperatures",
+          "description": "A list of temperatures for each Single Serve pulse (e.g. [96, 97, 98])."
+        },
+        "batch_pulses_enabled": {
+          "name": "Batch Pulses Enabled",
+          "description": "Enable batch pulses?"
+        },
+        "batch_pulses_number": {
+          "name": "Batch Pulses Number",
+          "description": "Number of batch pulses (1–10)."
+        },
+        "batch_pulses_interval": {
+          "name": "Batch Pulses Interval (seconds)",
+          "description": "Time between batch pulses, 5–60."
+        },
+        "batch_pulse_temperatures": {
+          "name": "Batch Pulse Temperatures",
+          "description": "A list of temperatures for each batch pulse (e.g. [96, 97])."
+        }
+      }
+    },
+    "delete_profile": {
+      "name": "Delete Brew Profile",
+      "description": "Delete a brew profile by ID.",
+      "fields": {
+        "profile_id": {
+          "name": "Profile ID",
+          "description": "ID of profile to delete (e.g. 'p1')"
+        }
+      }
+    },
+    "create_schedule": {
+      "name": "Create Brew Schedule",
+      "description": "Create a new brew schedule on the Fellow Aiden device. ⚠️ WARNING: Ensure carafe/cup is in place before scheduled brew time to prevent spills!",
+      "fields": {
+        "monday": {
+          "name": "Monday",
+          "description": "Enable brewing on Monday"
+        },
+        "tuesday": {
+          "name": "Tuesday",
+          "description": "Enable brewing on Tuesday"
+        },
+        "wednesday": {
+          "name": "Wednesday",
+          "description": "Enable brewing on Wednesday"
+        },
+        "thursday": {
+          "name": "Thursday",
+          "description": "Enable brewing on Thursday"
+        },
+        "friday": {
+          "name": "Friday",
+          "description": "Enable brewing on Friday"
+        },
+        "saturday": {
+          "name": "Saturday",
+          "description": "Enable brewing on Saturday"
+        },
+        "sunday": {
+          "name": "Sunday",
+          "description": "Enable brewing on Sunday"
+        },
+        "time": {
+          "name": "Time",
+          "description": "Time of day to run the schedule."
+        },
+        "amount_of_water": {
+          "name": "Water Amount (mL)",
+          "description": "Amount of water to use for brewing (150-1500 mL)."
+        },
+        "profile_name": {
+          "name": "Profile Name",
+          "description": "Name of the brew profile to use. Find names in the 'Fellow Aiden Profiles' dropdown."
+        },
+        "profile_id": {
+          "name": "Profile ID (Alternative)",
+          "description": "ID of the brew profile to use instead of its name (e.g. 'p1')."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Whether the schedule should be enabled."
+        }
+      }
+    },
+    "delete_schedule": {
+      "name": "Delete Brew Schedule",
+      "description": "Delete a brew schedule by its ID.",
+      "fields": {
+        "schedule_id": {
+          "name": "Schedule ID",
+          "description": "ID of the schedule to delete."
+        }
+      }
+    },
+    "toggle_schedule": {
+      "name": "Enable/Disable Brew Schedule",
+      "description": "Enable or disable a brew schedule by its ID.",
+      "fields": {
+        "schedule_id": {
+          "name": "Schedule ID",
+          "description": "ID of the schedule to toggle."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Enable or disable the schedule."
+        }
+      }
+    },
+    "start_brew": {
+      "name": "Start Brew Now",
+      "description": "Starts an immediate brew (scheduled 2 minutes from now). ⚠️ WARNING: Ensure carafe/cup is in place to prevent spills!",
+      "fields": {
+        "profile_name": {
+          "name": "Profile Name",
+          "description": "Name of the brew profile to use. Uses the default profile if not specified."
+        },
+        "profile_id": {
+          "name": "Profile ID (Alternative)",
+          "description": "ID of the brew profile to use instead of its name. Uses default if not specified."
+        },
+        "water_amount": {
+          "name": "Water Amount (mL)",
+          "description": "Amount of water to use (150-1500 mL). Uses the device default if not specified."
+        }
+      }
+    },
+    "list_profiles": {
+      "name": "List All Profiles",
+      "description": "Lists all available brew profiles with their names and IDs."
+    },
+    "get_profile_details": {
+      "name": "Get Profile Details",
+      "description": "Gets detailed information about a specific profile by its name or ID.",
+      "fields": {
+        "profile_name": {
+          "name": "Profile Name",
+          "description": "Name of the profile to get details for."
+        },
+        "profile_id": {
+          "name": "Profile ID (Alternative)",
+          "description": "ID of the profile to get details for (alternative to name)."
+        }
+      }
+    },
+    "reset_water_tracking": {
+      "name": "Reset Water Usage Tracking",
+      "description": "Resets water usage tracking to start fresh. Use this if historical water sensors seem incorrect."
+    },
+    "list_schedules": {
+      "name": "List All Schedules",
+      "description": "Lists all available brew schedules with their details."
+    },
+    "debug_water_usage": {
+      "name": "Debug Water Usage",
+      "description": "Logs detailed water usage history for troubleshooting."
+    },
+    "refresh_and_log_data": {
+      "name": "Refresh and Log Full Data",
+      "description": "Manually refreshes all data from the Fellow API and logs the complete response."
+    }
+  }
+}

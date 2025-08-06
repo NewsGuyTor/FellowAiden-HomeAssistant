@@ -4,6 +4,7 @@ PLATFORMS = ["sensor", "select", "binary_sensor"]
 
 # Update intervals
 DEFAULT_UPDATE_INTERVAL_MINUTES = 1
+MIN_UPDATE_INTERVAL_SECONDS = 30
 
 # Brew timing constants
 DEFAULT_WATER_AMOUNT_ML = 420

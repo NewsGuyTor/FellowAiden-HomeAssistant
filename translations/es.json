@@ -1,0 +1,242 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configurar Fellow Aiden",
+        "description": "Introduce las credenciales de tu cuenta de Fellow Aiden.",
+        "data": {
+          "email": "Correo electrónico",
+          "password": "Contraseña"
+        }
+      }
+    },
+    "error": {
+      "auth": "Correo electrónico o contraseña incorrectos"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Configurar Opciones Avanzadas de Fellow Aiden",
+        "description": "Ajusta configuraciones avanzadas. Nota: Cambiar el intervalo de actualización reiniciará la integración.",
+        "data": {
+          "update_interval_seconds": "Intervalo de Actualización (segundos)"
+        },
+        "data_description": {
+          "update_interval_seconds": "Con qué frecuencia consultar la nube de Fellow Aiden (mínimo 30 segundos, predeterminado 60 segundos). Valores más bajos proporcionan datos más responsivos pero pueden afectar el rendimiento."
+        }
+      }
+    },
+    "error": {
+      "too_fast": "El intervalo de actualización debe ser de al menos 30 segundos para evitar sobrecargar los servidores de Fellow"
+    }
+  },
+  "services": {
+    "create_profile": {
+      "name": "Crear Perfil de Preparación",
+      "description": "Crea un nuevo perfil de preparación en el dispositivo Fellow Aiden.",
+      "fields": {
+        "profile_type": {
+          "name": "Tipo de Perfil",
+          "description": "Tipo de perfil numérico"
+        },
+        "title": {
+          "name": "Título del Perfil",
+          "description": "Nombre del perfil de preparación"
+        },
+        "ratio": {
+          "name": "Proporción de Preparación",
+          "description": "Proporción café-agua (ej. 16 → proporción 1:16). Debe ser entre 14–20 en pasos de 0.5."
+        },
+        "bloom_enabled": {
+          "name": "Floración Habilitada",
+          "description": "¿Debe usarse la fase de floración?"
+        },
+        "bloom_ratio": {
+          "name": "Proporción de Floración",
+          "description": "Cantidad de agua usada en la floración relativa al peso del café (1.0–3.0)."
+        },
+        "bloom_duration": {
+          "name": "Duración de Floración (segundos)",
+          "description": "Duración de la fase de floración, 1–120 segundos."
+        },
+        "bloom_temperature": {
+          "name": "Temperatura de Floración (°C)",
+          "description": "Temperatura para la fase de floración, 50–99°C."
+        },
+        "ss_pulses_enabled": {
+          "name": "Pulsos Porción Individual Habilitados",
+          "description": "¿Habilitar pulsos para preparación de porción individual?"
+        },
+        "ss_pulses_number": {
+          "name": "Número de Pulsos Porción Individual",
+          "description": "¿Cuántos pulsos para preparación de porción individual? (1–10)."
+        },
+        "ss_pulses_interval": {
+          "name": "Intervalo de Pulsos Porción Individual (segundos)",
+          "description": "Tiempo entre pulsos de porción individual, 5–60."
+        },
+        "ss_pulse_temperatures": {
+          "name": "Temperaturas de Pulsos Porción Individual",
+          "description": "Una lista de temperaturas para cada pulso de porción individual (ej. [96, 97, 98])."
+        },
+        "batch_pulses_enabled": {
+          "name": "Pulsos por Lotes Habilitados",
+          "description": "¿Habilitar pulsos por lotes?"
+        },
+        "batch_pulses_number": {
+          "name": "Número de Pulsos por Lotes",
+          "description": "Número de pulsos por lotes (1–10)."
+        },
+        "batch_pulses_interval": {
+          "name": "Intervalo de Pulsos por Lotes (segundos)",
+          "description": "Tiempo entre pulsos por lotes, 5–60."
+        },
+        "batch_pulse_temperatures": {
+          "name": "Temperaturas de Pulsos por Lotes",
+          "description": "Una lista de temperaturas para cada pulso por lotes (ej. [96, 97])."
+        }
+      }
+    },
+    "delete_profile": {
+      "name": "Eliminar Perfil de Preparación",
+      "description": "Elimina un perfil de preparación por ID.",
+      "fields": {
+        "profile_id": {
+          "name": "ID del Perfil",
+          "description": "ID del perfil a eliminar (ej. 'p1')"
+        }
+      }
+    },
+    "create_schedule": {
+      "name": "Crear Horario de Preparación",
+      "description": "Crea un nuevo horario de preparación en el dispositivo Fellow Aiden. ⚠️ ADVERTENCIA: ¡Asegúrate de que la jarra/taza esté en su lugar antes de la hora programada para evitar derrames!",
+      "fields": {
+        "monday": {
+          "name": "Lunes",
+          "description": "Habilitar preparación los lunes"
+        },
+        "tuesday": {
+          "name": "Martes",
+          "description": "Habilitar preparación los martes"
+        },
+        "wednesday": {
+          "name": "Miércoles",
+          "description": "Habilitar preparación los miércoles"
+        },
+        "thursday": {
+          "name": "Jueves",
+          "description": "Habilitar preparación los jueves"
+        },
+        "friday": {
+          "name": "Viernes",
+          "description": "Habilitar preparación los viernes"
+        },
+        "saturday": {
+          "name": "Sábado",
+          "description": "Habilitar preparación los sábados"
+        },
+        "sunday": {
+          "name": "Domingo",
+          "description": "Habilitar preparación los domingos"
+        },
+        "time": {
+          "name": "Hora",
+          "description": "Hora del día para ejecutar el horario."
+        },
+        "amount_of_water": {
+          "name": "Cantidad de Agua (mL)",
+          "description": "Cantidad de agua para usar en la preparación (150-1500 mL)."
+        },
+        "profile_name": {
+          "name": "Nombre del Perfil",
+          "description": "Nombre del perfil de preparación a usar. Encuentra los nombres en el desplegable 'Perfiles Fellow Aiden'."
+        },
+        "profile_id": {
+          "name": "ID del Perfil (Alternativo)",
+          "description": "ID del perfil de preparación a usar en lugar de su nombre (ej. 'p1')."
+        },
+        "enabled": {
+          "name": "Habilitado",
+          "description": "Si el horario debe estar habilitado."
+        }
+      }
+    },
+    "delete_schedule": {
+      "name": "Eliminar Horario de Preparación",
+      "description": "Elimina un horario de preparación por su ID.",
+      "fields": {
+        "schedule_id": {
+          "name": "ID del Horario",
+          "description": "ID del horario a eliminar."
+        }
+      }
+    },
+    "toggle_schedule": {
+      "name": "Habilitar/Deshabilitar Horario de Preparación",
+      "description": "Habilita o deshabilita un horario de preparación por su ID.",
+      "fields": {
+        "schedule_id": {
+          "name": "ID del Horario",
+          "description": "ID del horario a alternar."
+        },
+        "enabled": {
+          "name": "Habilitado",
+          "description": "Habilitar o deshabilitar el horario."
+        }
+      }
+    },
+    "start_brew": {
+      "name": "Iniciar Preparación Ahora",
+      "description": "Inicia una preparación inmediata (programada para 2 minutos a partir de ahora). ⚠️ ADVERTENCIA: ¡Asegúrate de que la jarra/taza esté en su lugar para evitar derrames!",
+      "fields": {
+        "profile_name": {
+          "name": "Nombre del Perfil",
+          "description": "Nombre del perfil de preparación a usar. Usa el perfil predeterminado si no se especifica."
+        },
+        "profile_id": {
+          "name": "ID del Perfil (Alternativo)",
+          "description": "ID del perfil de preparación a usar en lugar de su nombre. Usa el predeterminado si no se especifica."
+        },
+        "water_amount": {
+          "name": "Cantidad de Agua (mL)",
+          "description": "Cantidad de agua a usar (150-1500 mL). Usa el predeterminado del dispositivo si no se especifica."
+        }
+      }
+    },
+    "list_profiles": {
+      "name": "Listar Todos los Perfiles",
+      "description": "Lista todos los perfiles de preparación disponibles con sus nombres e IDs."
+    },
+    "get_profile_details": {
+      "name": "Obtener Detalles del Perfil",
+      "description": "Obtiene información detallada sobre un perfil específico por su nombre o ID.",
+      "fields": {
+        "profile_name": {
+          "name": "Nombre del Perfil",
+          "description": "Nombre del perfil para obtener detalles."
+        },
+        "profile_id": {
+          "name": "ID del Perfil (Alternativo)",
+          "description": "ID del perfil para obtener detalles (alternativo al nombre)."
+        }
+      }
+    },
+    "reset_water_tracking": {
+      "name": "Resetear Seguimiento de Uso de Agua",
+      "description": "Resetea el seguimiento de uso de agua para empezar de nuevo. Úsalo si los sensores de agua históricos parecen incorrectos."
+    },
+    "list_schedules": {
+      "name": "Listar Todos los Horarios",
+      "description": "Lista todos los horarios de preparación disponibles con sus detalles."
+    },
+    "debug_water_usage": {
+      "name": "Depurar Uso de Agua",
+      "description": "Registra el historial detallado de uso de agua para solución de problemas."
+    },
+    "refresh_and_log_data": {
+      "name": "Actualizar y Registrar Datos Completos",
+      "description": "Actualiza manualmente todos los datos de la API de Fellow y registra la respuesta completa."
+    }
+  }
+}
