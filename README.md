@@ -26,9 +26,17 @@ This is a custom integration that brings your coffee brewer into the Home Assist
 
 - **Real-Time Sensors:**
   - **Sensors** for water usage, number of brews, average water per brew and more—because data is beautiful.
+  - **Analytics:** Daily/weekly/monthly water usage tracking, brew patterns, and timing insights.
   - **Binary sensors** for brewing, lid status, missing water, baskets inserted, etc.  
 - **Device Info:** Displays firmware version, hardware elevation (for you mountaintop dwellers), Wi-Fi and Bluetooth addresses, plus a witty sense of connectedness.
-- **Brew Profiles:** Create, list, and delete brew profiles from Home Assistant. No more rummaging for the perfect ratio at dawn.
+- **Brew Management:** 
+  - Create, list, delete, and manage brew profiles from Home Assistant
+  - Schedule management
+  - Start immediate brews with custom parameters
+  - Profile selection dropdown (display-only)
+- **Services:** A collection of services for all brewing operations
+- **Smart Logging:** Detailed API logging for manual operations, quiet polling for regular updates
+- **Water Usage Tracking:** Historical tracking with reset capabilities and period-specific sensors
 
 ## Screenshot
 <p align="center">
@@ -106,8 +114,28 @@ Choose one of the following methods to install the **Fellow Aiden** integration:
 ---
 
 ## Services
-- **`fellow_aiden.create_profile`**: Takes a JSON with brew settings (ratio, bloom, pulses, etc.) and creates a new profile in the brewer.  
-- **`fellow_aiden.delete_profile`**: Remove that ill-fated experimental profile from existence.
+
+### Brew Profile Management
+- **`fellow.create_profile`**: Create new brew profiles with detailed parameters (ratio, bloom, pulses, etc.)
+- **`fellow.delete_profile`**: Delete profiles by ID
+- **`fellow.list_profiles`**: List all available profiles with their names and IDs
+- **`fellow.get_profile_details`**: Get detailed information about a specific profile
+
+### Schedule Management
+- **`fellow.create_schedule`**: Create brewing schedules with day/time configurations
+- **`fellow.delete_schedule`**: Delete schedules by ID
+- **`fellow.toggle_schedule`**: Enable or disable existing schedules
+- **`fellow.list_schedules`**: List all current schedules with full details
+
+### Brewing Operations
+- **`fellow.start_brew`**: Start an immediate brew (scheduled 1 minute from now)
+
+### Analytics & Debugging
+- **`fellow.reset_water_tracking`**: Reset water usage tracking baseline
+- **`fellow.debug_water_usage`**: Show detailed water usage history
+- **`fellow.refresh_and_log_data`**: Manually refresh and log complete API response
+
+All services include error handling and detailed logging for troubleshooting.
 
 ---
 
@@ -115,10 +143,8 @@ Choose one of the following methods to install the **Fellow Aiden** integration:
 
 1. **It says “Device not found.”**  
    - Make sure you actually have a Fellow Aiden brewer configured with the same account. That helps.  
-2. **I see “unknown” for some sensors.**  
-   - Possibly the brewer hasn’t updated yet or the sensor values are missing from the device’s API. Wait a minute or two (literally).  
-3. **My baskets are showing up as On/Off—why not “Home”/”Away?”**  
-   - Because baskets aren’t known for packing suitcases, we changed the device class to `None`. They’re either inserted (On) or not (Off).
+2. **I see “Unknown” for some sensors.**  
+   - Possibly the brewer hasn’t updated yet or the sensor values are missing from the device’s API. Wait a minute or two (literally). Some others may take longer. Make sure to issue a bug report if they've been “Unknown” for days.
 
 ---
 
