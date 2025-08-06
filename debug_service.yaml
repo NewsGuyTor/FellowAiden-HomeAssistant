@@ -1,0 +1,4 @@
+debug_water_usage:
+  name: "Debug Water Usage History"
+  description: "Show all water usage tracking records in the logs"
+  fields: {}

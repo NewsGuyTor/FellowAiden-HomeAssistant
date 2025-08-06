@@ -13,19 +13,34 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Fellow Aiden from a config entry."""
+    _LOGGER.info(f"Setting up Fellow Aiden integration for entry {entry.entry_id}")
     hass.data.setdefault(DOMAIN, {})
 
     email = entry.data["email"]
     password = entry.data["password"]
+    _LOGGER.debug(f"Using email: {email}")
 
-    coordinator = FellowAidenDataUpdateCoordinator(hass, email, password)
+    _LOGGER.debug("Creating coordinator")
+    coordinator = FellowAidenDataUpdateCoordinator(hass, entry, email, password)
+    
+    _LOGGER.debug("Performing first refresh")
     await coordinator.async_config_entry_first_refresh()
+    _LOGGER.debug(f"First refresh completed, data available: {coordinator.data is not None}")
 
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
     # Forward platforms (sensor, etc.) and register services
+    _LOGGER.debug(f"Forwarding platforms: {PLATFORMS}")
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    async_register_services(hass, coordinator, entry)
+    
+    # Only register services once, not per config entry
+    if not hass.services.has_service(DOMAIN, "create_profile"):
+        _LOGGER.debug("Registering services")
+        async_register_services(hass)
+    else:
+        _LOGGER.debug("Services already registered, skipping")
+    
+    _LOGGER.info("Fellow Aiden integration setup completed successfully")
     return True
 
 
@@ -37,15 +52,22 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return unload_ok
 
 
-def async_register_services(
-    hass: HomeAssistant,
-    coordinator: FellowAidenDataUpdateCoordinator,
-    entry: ConfigEntry
-) -> None:
+def async_register_services(hass: HomeAssistant) -> None:
     """Register services for creating or deleting profiles."""
+
+    def get_coordinator() -> FellowAidenDataUpdateCoordinator:
+        """Get the first available coordinator from hass data."""
+        domain_data = hass.data.get(DOMAIN, {})
+        if not domain_data:
+            raise ValueError("No Fellow Aiden integrations configured")
+        
+        # Get the first available coordinator
+        entry_id = next(iter(domain_data.keys()))
+        return domain_data[entry_id]
 
     def get_profile_id_by_name(profile_name: str) -> str | None:
         """Get profile ID by profile name."""
+        coordinator = get_coordinator()
         data = coordinator.data
         if not data or "profiles" not in data:
             return None
@@ -57,6 +79,7 @@ def async_register_services(
 
     def get_available_profile_names() -> list[str]:
         """Get list of available profile names."""
+        coordinator = get_coordinator()
         data = coordinator.data
         if not data or "profiles" not in data:
             return []
@@ -64,29 +87,43 @@ def async_register_services(
 
     async def async_create_profile(call) -> None:
         """Create a brew profile on the Aiden device."""
-        data = {
-            "profileType": call.data.get("profileType", 0),
-            "title": call.data["title"],
-            "ratio": call.data["ratio"],
-            "bloomEnabled": call.data["bloomEnabled"],
-            "bloomRatio": call.data["bloomRatio"],
-            "bloomDuration": call.data["bloomDuration"],
-            "bloomTemperature": call.data["bloomTemperature"],
-            "ssPulsesEnabled": call.data["ssPulsesEnabled"],
-            "ssPulsesNumber": call.data["ssPulsesNumber"],
-            "ssPulsesInterval": call.data["ssPulsesInterval"],
-            "ssPulseTemperatures": call.data["ssPulseTemperatures"],
-            "batchPulsesEnabled": call.data["batchPulsesEnabled"],
-            "batchPulsesNumber": call.data["batchPulsesNumber"],
-            "batchPulsesInterval": call.data["batchPulsesInterval"],
-            "batchPulseTemperatures": call.data["batchPulseTemperatures"],
-        }
-        await hass.async_add_executor_job(coordinator.create_profile, data)
+        try:
+            coordinator = get_coordinator()
+            data = {
+                "profileType": call.data.get("profileType", 0),
+                "title": call.data["title"],
+                "ratio": call.data["ratio"],
+                "bloomEnabled": call.data["bloomEnabled"],
+                "bloomRatio": call.data["bloomRatio"],
+                "bloomDuration": call.data["bloomDuration"],
+                "bloomTemperature": call.data["bloomTemperature"],
+                "ssPulsesEnabled": call.data["ssPulsesEnabled"],
+                "ssPulsesNumber": call.data["ssPulsesNumber"],
+                "ssPulsesInterval": call.data["ssPulsesInterval"],
+                "ssPulseTemperatures": call.data["ssPulseTemperatures"],
+                "batchPulsesEnabled": call.data["batchPulsesEnabled"],
+                "batchPulsesNumber": call.data["batchPulsesNumber"],
+                "batchPulsesInterval": call.data["batchPulsesInterval"],
+                "batchPulseTemperatures": call.data["batchPulseTemperatures"],
+            }
+            _LOGGER.info("Creating profile with data: %s", data)
+            await hass.async_add_executor_job(coordinator.create_profile, data)
+            _LOGGER.info("Profile created successfully")
+        except Exception as e:
+            _LOGGER.error("Failed to create profile: %s", e)
+            raise
 
     async def async_delete_profile(call) -> None:
         """Delete a brew profile on the Aiden device by ID."""
-        pid = call.data.get("profile_id")
-        await hass.async_add_executor_job(coordinator.delete_profile, pid)
+        try:
+            coordinator = get_coordinator()
+            pid = call.data.get("profile_id")
+            _LOGGER.info("Deleting profile with ID: %s", pid)
+            await hass.async_add_executor_job(coordinator.delete_profile, pid)
+            _LOGGER.info("Profile deleted successfully")
+        except Exception as e:
+            _LOGGER.error("Failed to delete profile: %s", e)
+            raise
 
     async def async_create_schedule(call) -> None:
         """Create a brew schedule on the Aiden device."""
@@ -122,18 +159,35 @@ def async_register_services(
             "amountOfWater": call.data["amountOfWater"],
             "profileId": profile_id,
         }
+        coordinator = get_coordinator()
+        _LOGGER.info("Creating schedule with data: %s", data)
         await hass.async_add_executor_job(coordinator.create_schedule, data)
+        _LOGGER.info("Schedule created successfully")
 
     async def async_delete_schedule(call) -> None:
         """Delete a brew schedule on the Aiden device by ID."""
-        sid = call.data.get("schedule_id")
-        await hass.async_add_executor_job(coordinator.delete_schedule, sid)
+        try:
+            coordinator = get_coordinator()
+            sid = call.data.get("schedule_id")
+            _LOGGER.info("Deleting schedule with ID: %s", sid)
+            await hass.async_add_executor_job(coordinator.delete_schedule, sid)
+            _LOGGER.info("Schedule deleted successfully")
+        except Exception as e:
+            _LOGGER.error("Failed to delete schedule: %s", e)
+            raise
 
     async def async_toggle_schedule(call) -> None:
         """Enable or disable a brew schedule on the Aiden device."""
-        sid = call.data.get("schedule_id")
-        enabled = call.data.get("enabled", True)
-        await hass.async_add_executor_job(coordinator.toggle_schedule, sid, enabled)
+        try:
+            coordinator = get_coordinator()
+            sid = call.data.get("schedule_id")
+            enabled = call.data.get("enabled", True)
+            _LOGGER.info("Toggling schedule %s to enabled=%s", sid, enabled)
+            await hass.async_add_executor_job(coordinator.toggle_schedule, sid, enabled)
+            _LOGGER.info("Schedule toggled successfully")
+        except Exception as e:
+            _LOGGER.error("Failed to toggle schedule: %s", e)
+            raise
 
     async def async_start_brew(call) -> None:
         """Start an immediate brew on the Aiden device."""
@@ -154,8 +208,136 @@ def async_register_services(
                     available_names = get_available_profile_names()
                     raise ValueError(f"Profile '{profile_input}' not found. Available profiles: {', '.join(available_names)}")
         
+        coordinator = get_coordinator()
         water_amount = call.data.get("water_amount")
+        _LOGGER.info("Starting brew with profile_id=%s, water_amount=%s", profile_id, water_amount)
         await hass.async_add_executor_job(coordinator.start_brew, profile_id, water_amount)
+        _LOGGER.info("Brew started successfully")
+
+    async def async_list_profiles(call) -> None:
+        """List all available profiles with names and IDs."""
+        coordinator = get_coordinator()
+        data = coordinator.data
+        if not data or "profiles" not in data or not data["profiles"]:
+            _LOGGER.info("No profiles available")
+            return
+        
+        profiles_info = []
+        for profile in data["profiles"]:
+            profile_info = {
+                "id": profile.get("id"),
+                "title": profile.get("title", "Unnamed Profile"),
+                "isDefault": profile.get("isDefaultProfile", False)
+            }
+            profiles_info.append(profile_info)
+        
+        _LOGGER.info(f"Available profiles ({len(profiles_info)}):")
+        for profile in profiles_info:
+            default_marker = " (DEFAULT)" if profile["isDefault"] else ""
+            _LOGGER.info(f"  - {profile['title']} (ID: {profile['id']}){default_marker}")
+
+    async def async_get_profile_details(call) -> None:
+        """Get detailed information about a specific profile."""
+        profile_input = call.data.get("profile_name", call.data.get("profile_id"))
+        if not profile_input:
+            _LOGGER.error("Either profile_name or profile_id must be provided")
+            return
+        
+        coordinator = get_coordinator()
+        data = coordinator.data
+        if not data or "profiles" not in data or not data["profiles"]:
+            _LOGGER.error("No profiles available")
+            return
+        
+        # Find the profile
+        target_profile = None
+        for profile in data["profiles"]:
+            if (profile.get("title") == profile_input or 
+                profile.get("id") == profile_input):
+                target_profile = profile
+                break
+        
+        if not target_profile:
+            available_names = [p.get("title", "Unnamed") for p in data["profiles"]]
+            available_ids = [p.get("id") for p in data["profiles"]]
+            _LOGGER.error(f"Profile '{profile_input}' not found.")
+            _LOGGER.info(f"Available profile names: {', '.join(available_names)}")
+            _LOGGER.info(f"Available profile IDs: {', '.join(available_ids)}")
+            return
+        
+        _LOGGER.info(f"Profile Details for '{target_profile.get('title', 'Unnamed')}':") 
+        for key, value in target_profile.items():
+            _LOGGER.info(f"  {key}: {value}")
+
+    async def async_debug_water_usage(call) -> None:
+        """Debug water usage history by logging all records."""
+        _LOGGER.info("=== Water Usage Debug Information ===")
+        coordinator = get_coordinator()
+        coordinator.history_manager.debug_water_usage_history()
+        
+        # Also show current device water totals
+        device_config = coordinator.data.get("device_config", {})
+        current_total = device_config.get("totalWaterVolumeL", 0)
+        _LOGGER.info(f"Current device total water: {current_total}ml ({current_total/1000.0:.2f}L)")
+
+    async def async_reset_water_tracking(call) -> None:
+        """Reset water usage tracking to current device total."""
+        try:
+            _LOGGER.info("=== Resetting Water Usage Tracking ===")
+            coordinator = get_coordinator()
+            
+            # Get current device water total
+            device_config = coordinator.data.get("device_config", {})
+            current_total = device_config.get("totalWaterVolumeL", 0)
+            
+            _LOGGER.info(f"Resetting baseline to current device total: {current_total}ml ({current_total/1000.0:.2f}L)")
+            
+            # Reset the tracking
+            await coordinator.history_manager.async_reset_water_tracking(current_total)
+            
+            _LOGGER.info("Water usage tracking reset complete. Period-specific sensors should now show 0.0L until new usage is detected.")
+        except Exception as e:
+            _LOGGER.error("Failed to reset water tracking: %s", e)
+            raise
+
+    async def async_list_schedules(call) -> None:
+        """List all available schedules with their details."""
+        try:
+            coordinator = get_coordinator()
+            # Force a refresh to get latest schedules data
+            await coordinator.async_request_refresh()
+            
+            data = coordinator.data
+            _LOGGER.info("=== Current Schedules ===")
+            
+            # Check if schedules data is available in the response
+            if data and "schedules" in data and data["schedules"]:
+                schedules = data["schedules"]
+                _LOGGER.info(f"Found {len(schedules)} schedules:")
+                for i, schedule in enumerate(schedules):
+                    _LOGGER.info(f"Schedule {i+1}:")
+                    for key, value in schedule.items():
+                        _LOGGER.info(f"  {key}: {value}")
+            else:
+                _LOGGER.info("No schedules found or schedules not available in API response")
+                _LOGGER.info("Available data keys: %s", list(data.keys()) if data else "No data")
+        except Exception as e:
+            _LOGGER.error("Failed to list schedules: %s", e)
+            raise
+
+    async def async_refresh_and_log_data(call) -> None:
+        """Manually refresh data and log full API response."""
+        try:
+            _LOGGER.info("=== Manual Data Refresh Requested ===")
+            coordinator = get_coordinator()
+            
+            # Force a refresh with verbose logging
+            await hass.async_add_executor_job(coordinator._fetch, True)
+            
+            _LOGGER.info("Manual refresh completed - check logs above for full API response")
+        except Exception as e:
+            _LOGGER.error("Failed to refresh and log data: %s", e)
+            raise
 
     hass.services.async_register(
         DOMAIN,
@@ -191,5 +373,41 @@ def async_register_services(
         DOMAIN,
         "start_brew",
         async_start_brew,
+        schema=None
+    )
+    hass.services.async_register(
+        DOMAIN,
+        "list_profiles",
+        async_list_profiles,
+        schema=None
+    )
+    hass.services.async_register(
+        DOMAIN,
+        "get_profile_details",
+        async_get_profile_details,
+        schema=None
+    )
+    hass.services.async_register(
+        DOMAIN,
+        "debug_water_usage",
+        async_debug_water_usage,
+        schema=None
+    )
+    hass.services.async_register(
+        DOMAIN,
+        "reset_water_tracking",
+        async_reset_water_tracking,
+        schema=None
+    )
+    hass.services.async_register(
+        DOMAIN,
+        "list_schedules",
+        async_list_schedules,
+        schema=None
+    )
+    hass.services.async_register(
+        DOMAIN,
+        "refresh_and_log_data",
+        async_refresh_and_log_data,
         schema=None
     )

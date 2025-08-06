@@ -34,7 +34,12 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up sensors for the Fellow Aiden integration."""
+    _LOGGER.debug(f"Setting up sensors for entry {entry.entry_id}")
     coordinator: FellowAidenDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+    
+    _LOGGER.debug(f"Coordinator data available: {coordinator.data is not None}")
+    if coordinator.data:
+        _LOGGER.debug(f"Coordinator data keys: {list(coordinator.data.keys())}")
 
     entities: list[SensorEntity] = []
 
@@ -79,7 +84,21 @@ async def async_setup_entry(
         )
     )
 
+    # Initialize new analytics sensors
+    entities.extend([
+        AidenAverageTimeBetweenBrewsSensor(coordinator, entry),
+        AidenLastBrewTimeSensor(coordinator, entry),
+        AidenTotalWaterTodaySensor(coordinator, entry),
+        AidenTotalWaterWeekSensor(coordinator, entry),
+        AidenTotalWaterMonthSensor(coordinator, entry),
+        AidenAverageBrewDurationSensor(coordinator, entry),
+        AidenMostPopularProfileSensor(coordinator, entry),
+        AidenCurrentProfileSensor(coordinator, entry),
+    ])
+
+    _LOGGER.debug(f"Adding {len(entities)} sensor entities")
     async_add_entities(entities, True)
+    _LOGGER.info(f"Successfully set up {len(entities)} sensors for Fellow Aiden")
 
 
 class AidenSensor(FellowAidenBaseEntity, SensorEntity):
@@ -253,3 +272,491 @@ class AidenLastBrewDurationSensor(FellowAidenBaseEntity, SensorEntity):
         except (ValueError, TypeError) as error:
             _LOGGER.error(f"Error calculating brew duration: {error}")
             return None
+
+
+class AidenAverageTimeBetweenBrewsSensor(FellowAidenBaseEntity, SensorEntity):
+    """
+    Calculates average time between brews based on total brews and device uptime.
+    Limited by available data - provides rough estimate only.
+    """
+
+    def __init__(
+        self,
+        coordinator: FellowAidenDataUpdateCoordinator,
+        entry: ConfigEntry,
+    ) -> None:
+        """Initialize the average time between brews sensor."""
+        super().__init__(coordinator)
+        self._entry_id = entry.entry_id
+        self._attr_name = "Aiden Average Time Between Brews"
+        self._attr_unique_id = f"{entry.entry_id}-avg_time_between_brews"
+        self._attr_icon = "mdi:clock-outline"
+        self._attr_native_unit_of_measurement = "hours"
+
+    @property
+    def native_value(self) -> float | None:
+        """Calculate average time between brews using historical data."""
+        return self.coordinator.history_manager.get_average_time_between_brews()
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        """Return additional attributes."""
+        history_count = len(self.coordinator.history_manager._brew_history)
+        return {
+            "historical_brews": history_count,
+            "accuracy": "High - based on actual historical data" if history_count >= 2 else "Low - insufficient historical data",
+            "note": f"Calculated from {history_count} recorded brews"
+        }
+
+
+class AidenLastBrewTimeSensor(FellowAidenBaseEntity, SensorEntity):
+    """
+    Shows when the last brew was completed (brew end time).
+    """
+
+    def __init__(
+        self,
+        coordinator: FellowAidenDataUpdateCoordinator,
+        entry: ConfigEntry,
+    ) -> None:
+        """Initialize the last brew time sensor."""
+        super().__init__(coordinator)
+        self._entry_id = entry.entry_id
+        self._attr_name = "Aiden Last Brew Time"
+        self._attr_unique_id = f"{entry.entry_id}-last_brew_time"
+        self._attr_icon = "mdi:coffee-outline"
+        self._attr_device_class = "timestamp"
+
+    @property
+    def native_value(self) -> datetime | None:
+        """Return the last brew completion time using historical data."""
+        from homeassistant.util import dt as dt_util
+        
+        # Try historical data first, fallback to device data
+        historical_time = self.coordinator.history_manager.get_last_brew_time()
+        if historical_time:
+            # Ensure timezone is set
+            if historical_time.tzinfo is None:
+                return dt_util.as_local(historical_time)
+            return historical_time
+            
+        # Fallback to device data
+        device_config = self.coordinator.data.get("device_config", {})
+        end_time_str = device_config.get("brewEndTime")
+
+        if not end_time_str or end_time_str == "0":
+            return None
+
+        try:
+            timestamp_int = int(end_time_str)
+            if timestamp_int == 0 or timestamp_int < 1704067201:  # Before 2024
+                return None
+            # Create timezone-aware datetime
+            return dt_util.utc_from_timestamp(timestamp_int)
+        except (ValueError, TypeError) as error:
+            _LOGGER.error(f"Error parsing last brew time: {error}")
+            return None
+
+
+class AidenTotalWaterTodaySensor(FellowAidenBaseEntity, SensorEntity):
+    """
+    Tracks water used today. Limited by device data - shows total since device reset.
+    """
+
+    def __init__(
+        self,
+        coordinator: FellowAidenDataUpdateCoordinator,
+        entry: ConfigEntry,
+    ) -> None:
+        """Initialize the total water today sensor."""
+        super().__init__(coordinator)
+        self._entry_id = entry.entry_id
+        self._attr_name = "Aiden Total Water Today"
+        self._attr_unique_id = f"{entry.entry_id}-total_water_today"
+        self._attr_icon = "mdi:water"
+        self._attr_native_unit_of_measurement = "L"
+
+    @property
+    def native_value(self) -> float | None:
+        """Return total water used today using historical data."""
+        # IMPORTANT: Only use historical tracking data, never fallback to device totals
+        water_usage = self.coordinator.history_manager.get_water_usage_for_period(1)
+        _LOGGER.debug(f"Water usage today from history: {water_usage}L")
+        
+        # Ensure we never accidentally return device lifetime totals
+        if water_usage is None or water_usage < 0:
+            _LOGGER.warning("Invalid water usage value from history manager, returning 0.0")
+            return 0.0
+            
+        return water_usage
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        """Return additional attributes."""
+        water_records = len(self.coordinator.history_manager._water_usage_history)
+        return {
+            "historical_records": water_records,
+            "accuracy": "High - based on actual usage tracking" if water_records > 0 else "Low - no historical data yet",
+            "note": f"Calculated from {water_records} water usage records"
+        }
+
+
+class AidenTotalWaterWeekSensor(FellowAidenBaseEntity, SensorEntity):
+    """
+    Weekly water usage sensor. Limited by device data availability.
+    """
+
+    def __init__(
+        self,
+        coordinator: FellowAidenDataUpdateCoordinator,
+        entry: ConfigEntry,
+    ) -> None:
+        """Initialize the total water week sensor."""
+        super().__init__(coordinator)
+        self._entry_id = entry.entry_id
+        self._attr_name = "Aiden Total Water This Week"
+        self._attr_unique_id = f"{entry.entry_id}-total_water_week"
+        self._attr_icon = "mdi:water"
+        self._attr_native_unit_of_measurement = "L"
+
+    @property
+    def native_value(self) -> float | None:
+        """Return total water used this week using historical data."""
+        # IMPORTANT: Only use historical tracking data, never fallback to device totals
+        water_usage = self.coordinator.history_manager.get_water_usage_for_period(7)
+        _LOGGER.debug(f"Water usage this week from history: {water_usage}L")
+        
+        # Ensure we never accidentally return device lifetime totals
+        if water_usage is None or water_usage < 0:
+            _LOGGER.warning("Invalid water usage value from history manager, returning 0.0")
+            return 0.0
+            
+        return water_usage
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        """Return additional attributes."""
+        water_records = len(self.coordinator.history_manager._water_usage_history)
+        brew_count = self.coordinator.history_manager.get_brew_count_for_period(7)
+        return {
+            "historical_records": water_records,
+            "brews_this_week": brew_count,
+            "accuracy": "High - based on actual usage tracking" if water_records > 0 else "Low - no historical data yet",
+            "note": f"Calculated from {water_records} water usage records"
+        }
+
+
+class AidenTotalWaterMonthSensor(FellowAidenBaseEntity, SensorEntity):
+    """
+    Monthly water usage sensor. Limited by device data availability.
+    """
+
+    def __init__(
+        self,
+        coordinator: FellowAidenDataUpdateCoordinator,
+        entry: ConfigEntry,
+    ) -> None:
+        """Initialize the total water month sensor."""
+        super().__init__(coordinator)
+        self._entry_id = entry.entry_id
+        self._attr_name = "Aiden Total Water This Month"
+        self._attr_unique_id = f"{entry.entry_id}-total_water_month"
+        self._attr_icon = "mdi:water"
+        self._attr_native_unit_of_measurement = "L"
+
+    @property
+    def native_value(self) -> float | None:
+        """Return total water used this month using historical data."""
+        # IMPORTANT: Only use historical tracking data, never fallback to device totals
+        water_usage = self.coordinator.history_manager.get_water_usage_for_period(30)
+        _LOGGER.debug(f"Water usage this month from history: {water_usage}L")
+        
+        # Ensure we never accidentally return device lifetime totals
+        if water_usage is None or water_usage < 0:
+            _LOGGER.warning("Invalid water usage value from history manager, returning 0.0")
+            return 0.0
+            
+        return water_usage
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        """Return additional attributes."""
+        water_records = len(self.coordinator.history_manager._water_usage_history)
+        brew_count = self.coordinator.history_manager.get_brew_count_for_period(30)
+        return {
+            "historical_records": water_records,
+            "brews_this_month": brew_count,
+            "accuracy": "High - based on actual usage tracking" if water_records > 0 else "Low - no historical data yet",
+            "note": f"Calculated from {water_records} water usage records"
+        }
+
+
+class AidenAverageBrewDurationSensor(FellowAidenBaseEntity, SensorEntity):
+    """
+    Shows average brew duration. Limited to last brew data only.
+    """
+
+    def __init__(
+        self,
+        coordinator: FellowAidenDataUpdateCoordinator,
+        entry: ConfigEntry,
+    ) -> None:
+        """Initialize the average brew duration sensor."""
+        super().__init__(coordinator)
+        self._entry_id = entry.entry_id
+        self._attr_name = "Aiden Average Brew Duration"
+        self._attr_unique_id = f"{entry.entry_id}-avg_brew_duration"
+        self._attr_icon = "mdi:timer"
+        self._attr_native_unit_of_measurement = "minutes"
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the average brew duration using historical data."""
+        historical_avg = self.coordinator.history_manager.get_average_brew_duration()
+        if historical_avg:
+            return historical_avg
+            
+        # Fallback to last brew duration if no historical data
+        device_config = self.coordinator.data.get("device_config", {})
+        start_time_str = device_config.get("brewStartTime")
+        end_time_str = device_config.get("brewEndTime")
+
+        if not start_time_str or not end_time_str:
+            return None
+
+        try:
+            start_timestamp = int(start_time_str)
+            end_timestamp = int(end_time_str)
+
+            if start_timestamp == 0 or end_timestamp == 0:
+                return None
+            if start_timestamp < 1704067201 or end_timestamp < 1704067201:
+                return None
+
+            duration_seconds = end_timestamp - start_timestamp
+            if duration_seconds < 0:
+                return None
+
+            return round(duration_seconds / 60.0, 1)  # Convert to minutes
+        except (ValueError, TypeError) as error:
+            _LOGGER.error(f"Error calculating brew duration: {error}")
+            return None
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        """Return additional attributes."""
+        brew_records = len(self.coordinator.history_manager._brew_history)
+        historical_avg = self.coordinator.history_manager.get_average_brew_duration()
+        return {
+            "historical_brews": brew_records,
+            "accuracy": "High - based on historical averages" if historical_avg else "Low - using last brew only",
+            "note": f"Calculated from {brew_records} recorded brews" if historical_avg else "Fallback to last brew duration"
+        }
+
+
+class AidenMostPopularProfileSensor(FellowAidenBaseEntity, SensorEntity):
+    """
+    Shows the most popular brew profile. Limited by available data.
+    """
+
+    def __init__(
+        self,
+        coordinator: FellowAidenDataUpdateCoordinator,
+        entry: ConfigEntry,
+    ) -> None:
+        """Initialize the most popular profile sensor."""
+        super().__init__(coordinator)
+        self._entry_id = entry.entry_id
+        self._attr_name = "Aiden Most Popular Profile"
+        self._attr_unique_id = f"{entry.entry_id}-most_popular_profile"
+        self._attr_icon = "mdi:star"
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the most popular profile name using historical data."""
+        # Try to get most popular from historical data
+        most_popular = self.coordinator.history_manager.get_most_popular_profile()
+        if most_popular:
+            return most_popular
+            
+        # Fallback to default or first profile
+        data = self.coordinator.data
+        if not data or "profiles" not in data or not data["profiles"]:
+            return "No profiles available"
+        
+        # Look for default profile first
+        default_profile = next(
+            (p for p in data["profiles"] if p.get("isDefaultProfile")), 
+            None
+        )
+        if default_profile:
+            return default_profile.get("title", "Default Profile")
+        
+        # Otherwise return the first profile
+        return data["profiles"][0].get("title", "Profile 1")
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        """Return additional attributes."""
+        data = self.coordinator.data
+        total_profiles = len(data.get("profiles", [])) if data else 0
+        profile_stats = self.coordinator.history_manager.get_profile_usage_stats()
+        most_popular = self.coordinator.history_manager.get_most_popular_profile()
+        
+        attrs = {
+            "total_profiles": total_profiles,
+            "profile_usage_stats": profile_stats,
+        }
+        
+        if most_popular and profile_stats:
+            attrs["accuracy"] = "High - based on actual usage tracking"
+            attrs["note"] = f"Based on {sum(profile_stats.values())} recorded brews"
+            attrs["usage_count"] = profile_stats.get(most_popular, 0)
+        else:
+            attrs["accuracy"] = "Low - using default/first profile"
+            attrs["note"] = "No historical usage data available yet"
+            
+        return attrs
+
+
+class AidenCurrentProfileSensor(FellowAidenBaseEntity, SensorEntity):
+    """
+    Shows the current or most recently used profile.
+    """
+
+    def __init__(
+        self,
+        coordinator: FellowAidenDataUpdateCoordinator,
+        entry: ConfigEntry,
+    ) -> None:
+        """Initialize the current profile sensor."""
+        super().__init__(coordinator)
+        self._entry_id = entry.entry_id
+        self._attr_name = "Aiden Current Profile"
+        self._attr_unique_id = f"{entry.entry_id}-current_profile"
+        self._attr_icon = "mdi:coffee"
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the current profile name."""
+        _LOGGER.debug("Getting current profile value")
+        data = self.coordinator.data
+        _LOGGER.debug(f"Data available: {data is not None}, profiles count: {len(data.get('profiles', [])) if data else 0}")
+        
+        # Method 1: Check for most recently used profile by lastUsedTime
+        if data and "profiles" in data and data["profiles"]:
+            profiles_with_last_used = []
+            for profile in data["profiles"]:
+                last_used = profile.get("lastUsedTime")
+                if last_used and last_used != "0":
+                    try:
+                        last_used_timestamp = int(last_used)
+                        if last_used_timestamp > 0:
+                            profiles_with_last_used.append((profile, last_used_timestamp))
+                    except (ValueError, TypeError):
+                        continue
+            
+            # Sort by lastUsedTime descending and return the most recent
+            if profiles_with_last_used:
+                profiles_with_last_used.sort(key=lambda x: x[1], reverse=True)
+                most_recent_profile = profiles_with_last_used[0][0]
+                _LOGGER.debug(f"Found most recent profile: {most_recent_profile.get('title')} (lastUsedTime: {profiles_with_last_used[0][1]})")
+                return most_recent_profile.get("title", "Recent Profile")
+        
+        # Method 2: Check for default profile flag
+        if data and "profiles" in data and data["profiles"]:
+            default_profile = next(
+                (p for p in data["profiles"] if p.get("isDefaultProfile")), 
+                None
+            )
+            if default_profile:
+                _LOGGER.debug(f"Using default profile: {default_profile.get('title')}")
+                return default_profile.get("title", "Default Profile")
+        
+        # Method 3: Use most popular profile from history
+        most_popular = self.coordinator.history_manager.get_most_popular_profile()
+        if most_popular:
+            _LOGGER.debug(f"Using most popular from history: {most_popular}")
+            return most_popular
+        
+        # Method 4: Fallback to first available profile
+        if data and "profiles" in data and data["profiles"]:
+            _LOGGER.debug("Using first available profile")
+            return data["profiles"][0].get("title", "Profile 1")
+        
+        return "No profiles available"
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        """Return additional attributes."""
+        data = self.coordinator.data
+        total_profiles = len(data.get("profiles", [])) if data else 0
+        
+        # Determine detection method (matches the logic in native_value)
+        detection_method = "unknown"
+        confidence = "low"
+        last_used_time = None
+        
+        if data and "profiles" in data and data["profiles"]:
+            # Check for most recently used profile first
+            profiles_with_last_used = []
+            for profile in data["profiles"]:
+                last_used = profile.get("lastUsedTime")
+                if last_used and last_used != "0":
+                    try:
+                        last_used_timestamp = int(last_used)
+                        if last_used_timestamp > 0:
+                            profiles_with_last_used.append((profile, last_used_timestamp))
+                    except (ValueError, TypeError):
+                        continue
+            
+            if profiles_with_last_used:
+                profiles_with_last_used.sort(key=lambda x: x[1], reverse=True)
+                most_recent_timestamp = profiles_with_last_used[0][1]
+                from datetime import datetime
+                try:
+                    last_used_time = datetime.fromtimestamp(most_recent_timestamp).isoformat()
+                except (ValueError, OSError):
+                    pass
+                detection_method = "last_used_time"
+                confidence = "very_high"
+            else:
+                # Fallback to default profile flag
+                default_profile = next(
+                    (p for p in data["profiles"] if p.get("isDefaultProfile")), 
+                    None
+                )
+                if default_profile:
+                    detection_method = "default_profile_flag"
+                    confidence = "medium"
+                else:
+                    most_popular = self.coordinator.history_manager.get_most_popular_profile()
+                    if most_popular:
+                        detection_method = "historical_usage"
+                        confidence = "low_medium"
+                    else:
+                        detection_method = "first_available"
+                        confidence = "low"
+        
+        attrs = {
+            "total_profiles": total_profiles,
+            "detection_method": detection_method,
+            "confidence": confidence,
+        }
+        
+        # Add last used time if available
+        if last_used_time:
+            attrs["last_used_time"] = last_used_time
+        
+        # Add last brew information if available
+        last_brew_time = self.coordinator.history_manager.get_last_brew_time()
+        if last_brew_time:
+            attrs["last_brew_time"] = last_brew_time.isoformat()
+        
+        # Add profile usage stats
+        profile_stats = self.coordinator.history_manager.get_profile_usage_stats()
+        if profile_stats:
+            attrs["profile_usage_stats"] = profile_stats
+            attrs["total_historical_brews"] = sum(profile_stats.values())
+        
+        return attrs

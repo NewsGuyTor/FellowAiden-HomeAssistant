@@ -314,3 +314,47 @@ start_brew:
           step: 1
           unit_of_measurement: "mL"
           mode: box
+
+list_profiles:
+  name: "List All Profiles"
+  description: "List all available brew profiles with their names and IDs"
+  fields: {}
+
+get_profile_details:
+  name: "Get Profile Details"
+  description: "Get detailed information about a specific profile"
+  fields:
+    profile_name:
+      name: "Profile Name"
+      description: "Name of the profile to get details for"
+      required: false
+      example: "My Morning Coffee"
+      selector:
+        text:
+    profile_id:
+      name: "Profile ID (Alternative)"
+      description: "ID of the profile to get details for (alternative to name)"
+      required: false
+      example: "p1"
+      selector:
+        text:
+
+reset_water_tracking:
+  name: "Reset Water Usage Tracking"
+  description: "Reset water usage tracking to start fresh from current device total. Use this if historical water usage sensors show incorrect values."
+  fields: {}
+
+list_schedules:
+  name: "List All Schedules"  
+  description: "List all available brew schedules with their details"
+  fields: {}
+
+debug_water_usage:
+  name: "Debug Water Usage"
+  description: "Debug water usage tracking and show detailed history information"
+  fields: {}
+
+refresh_and_log_data:
+  name: "Refresh and Log Full Data"
+  description: "Manually refresh data from Fellow API and log complete response details"
+  fields: {}

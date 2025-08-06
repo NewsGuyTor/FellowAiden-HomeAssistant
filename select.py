@@ -66,14 +66,9 @@ class FellowAidenProfilesSelect(CoordinatorEntity, SelectEntity):
     async def async_select_option(self, option: str) -> None:
         """
         Called when a user selects a profile from the drop-down.
-
-        Currently, there's no supported "activate profile" method in the underlying library.
-        Log the choice for now. If future functionality is added, place the API call here.
+        Currently disabled - use services to manage profiles instead.
         """
-        _LOGGER.info(
-            "User selected profile '%s', but no library method to activate it.",
-            option
-        )
-        # If the library eventually adds support, it might look like:
-        # await self.hass.async_add_executor_job(self.coordinator.api.activate_profile, option)
-        return
+        _LOGGER.info("Profile selection attempted for '%s', but this feature is disabled", option)
+        _LOGGER.info("Use the fellow.start_brew service with profileName parameter instead")
+        # Note: This method is required by Home Assistant but we don't implement profile switching
+        # Users should use the fellow.start_brew service to brew with specific profiles
