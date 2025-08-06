@@ -109,20 +109,12 @@ def async_register_services(hass: HomeAssistant) -> None:
                 "batchPulseTemperatures": call.data["batchPulseTemperatures"],
             }
             _LOGGER.info("Creating profile with data: %s", data)
-
-            # Check the return value from the library call
-            result = await hass.async_add_executor_job(coordinator.create_profile, data)
-
-            if not result:
-                # The library returned False, indicating a validation error
-                _LOGGER.error("Library rejected profile data. See library logs for details.")
-                raise ServiceValidationError(
-                    "Failed to create profile. Please check that all values are within their valid ranges."
-                )
-
+            await hass.async_add_executor_job(coordinator.create_profile, data)
             _LOGGER.info("Profile created successfully")
+        except ValueError as e:
+            _LOGGER.error("Validation failed when creating profile: %s", e)
+            raise ServiceValidationError(str(e))
         except Exception as e:
-            # Catch other exceptions that might occur
             _LOGGER.error("Failed to create profile: %s", e)
             raise
 
@@ -144,22 +136,24 @@ def async_register_services(hass: HomeAssistant) -> None:
             # Handle profile name to ID conversion
             profile_input = call.data.get("profileName", call.data.get("profileId"))
             if not profile_input:
-                raise ServiceValidationError("Either a Profile Name or Profile ID must be provided.")
+                raise ValueError("Either profileName or profileId must be provided")
 
-            coordinator = get_coordinator()
+            # Try to get profile ID by name first, fall back to direct ID
             profile_id = get_profile_id_by_name(profile_input)
             if not profile_id:
+                # Assume it's already an ID - validate format
                 import re
                 profile_id_regex = re.compile(r'^(p|plocal)\d+$')
                 if profile_id_regex.match(profile_input):
-                    profile_id = profile_input
+                    profile_id = profile_input  # Use the provided ID
                 else:
                     available_names = get_available_profile_names()
-                    raise ServiceValidationError(f"Profile '{profile_input}' not found. Available profiles: {', '.join(available_names)}")
+                    raise ValueError(f"Profile '{profile_input}' not found. Available profiles: {', '.join(available_names)}")
 
+            # Get time object from service call and convert to seconds
             time_input: time | None = call.data.get("time")
             if not time_input:
-                raise ServiceValidationError("'Time' must be provided for the schedule.")
+                raise ValueError("'time' must be provided for the schedule")
 
             seconds_from_start_of_day = (
                 time_input.hour * 3600 + time_input.minute * 60 + time_input.second
@@ -180,22 +174,14 @@ def async_register_services(hass: HomeAssistant) -> None:
                 "amountOfWater": call.data["amountOfWater"],
                 "profileId": profile_id,
             }
-
+            coordinator = get_coordinator()
             _LOGGER.info("Creating schedule with data: %s", data)
-
-            # Check the return value from the library call
-            result = await hass.async_add_executor_job(coordinator.create_schedule, data)
-
-            if not result:
-                # The library returned False, indicating a validation error
-                _LOGGER.error("Library rejected schedule data. See library logs for details.")
-                raise ServiceValidationError(
-                    "Failed to create schedule. Please check that all values are within their valid ranges (e.g., Water Amount: 150-1500 mL)."
-                )
-
+            await hass.async_add_executor_job(coordinator.create_schedule, data)
             _LOGGER.info("Schedule created successfully")
+        except ValueError as e:
+            _LOGGER.error("Validation failed when creating schedule: %s", e)
+            raise ServiceValidationError(str(e))
         except Exception as e:
-            # Catch other exceptions, including our own ServiceValidationError
             _LOGGER.error("Failed to create schedule: %s", e)
             raise
 
@@ -226,31 +212,53 @@ def async_register_services(hass: HomeAssistant) -> None:
 
     async def async_start_brew(call) -> None:
         """Start an immediate brew on the Aiden device."""
-        # Handle profile name to ID conversion
-        profile_input = call.data.get("profileName", call.data.get("profile_id"))
         profile_id = None
-
         coordinator = get_coordinator()
+
+        # Handle profile name to ID conversion if provided
+        profile_input = call.data.get("profileName") or call.data.get("profile_id")
+
         if profile_input:
+            # Try to get profile ID by name first
             profile_id = get_profile_id_by_name(profile_input)
             if not profile_id:
+                # Assume it's already an ID - validate format
                 import re
                 profile_id_regex = re.compile(r'^(p|plocal)\d+$')
                 if profile_id_regex.match(profile_input):
-                    profile_id = profile_input
+                    profile_id = profile_input  # Use the provided ID
                 else:
                     available_names = get_available_profile_names()
-                    raise ServiceValidationError(f"Profile '{profile_input}' not found. Available profiles: {', '.join(available_names)}")
+                    raise ServiceValidationError(
+                        f"Profile '{profile_input}' not found. Available profiles: {', '.join(available_names)}"
+                    )
+
+        # If profile_id is still None, find the default profile
+        if not profile_id:
+            _LOGGER.debug("No profile specified by user, finding default profile.")
+            profiles = coordinator.data.get("profiles", [])
+            if not profiles:
+                raise ServiceValidationError("Cannot start brew: No brew profiles exist on the device.")
+
+            # Find the profile flagged as default by the API
+            default_profile = next((p for p in profiles if p.get("isDefaultProfile")), None)
+
+            if default_profile:
+                profile_id = default_profile.get("id")
+                _LOGGER.info(f"Using default profile: '{default_profile.get('title')}' (ID: {profile_id})")
+            else:
+                # Fallback to the first profile in the list if no explicit default is set
+                profile_id = profiles[0].get("id")
+                _LOGGER.info(f"No default profile set. Using first available profile: '{profiles[0].get('title')}' (ID: {profile_id})")
+
+        # Final check to ensure we have a profile ID
+        if not profile_id:
+            raise ServiceValidationError("Could not determine a profile to use for the brew. Please ensure at least one profile exists.")
 
         water_amount = call.data.get("water_amount")
-
-        # Proactively check water amount here before sending to the library
-        if water_amount is not None and not (150 <= water_amount <= 1500):
-            raise ServiceValidationError("Water Amount must be between 150 and 1500 mL.")
-
-        _LOGGER.info("Starting brew with profile_id=%s, water_amount=%s", profile_id, water_amount)
+        _LOGGER.info("Requesting to start brew with profile_id=%s, water_amount=%s", profile_id, water_amount)
         await hass.async_add_executor_job(coordinator.start_brew, profile_id, water_amount)
-        _LOGGER.info("Brew started successfully")
+        _LOGGER.info("Brew start request sent successfully")
 
     async def async_list_profiles(call) -> ServiceResponse:
         """List all available profiles with names and IDs."""
@@ -276,13 +284,16 @@ def async_register_services(hass: HomeAssistant) -> None:
         """Get detailed information about a specific profile."""
         profile_input = call.data.get("profile_name", call.data.get("profile_id"))
         if not profile_input:
-            raise ServiceValidationError("Either profile_name or profile_id must be provided")
+            _LOGGER.error("Either profile_name or profile_id must be provided")
+            return {"error": "Either profile_name or profile_id must be provided"}
 
         coordinator = get_coordinator()
         data = coordinator.data
         if not data or "profiles" not in data or not data["profiles"]:
+            _LOGGER.error("No profiles available")
             return {"error": "No profiles available"}
 
+        # Find the profile
         target_profile = next(
             (
                 profile for profile in data["profiles"]
@@ -293,7 +304,8 @@ def async_register_services(hass: HomeAssistant) -> None:
 
         if not target_profile:
             available_names = [p.get("title", "Unnamed") for p in data["profiles"]]
-            raise ServiceValidationError(f"Profile '{profile_input}' not found. Available: {', '.join(available_names)}")
+            _LOGGER.error(f"Profile '{profile_input}' not found. Available: {', '.join(available_names)}")
+            return {"error": f"Profile '{profile_input}' not found"}
 
         _LOGGER.info(f"Returning details for profile '{target_profile.get('title', 'Unnamed')}'")
         return {"profile": target_profile}
@@ -319,11 +331,13 @@ def async_register_services(hass: HomeAssistant) -> None:
             _LOGGER.info("=== Resetting Water Usage Tracking ===")
             coordinator = get_coordinator()
 
+            # Get current device water total
             device_config = coordinator.data.get("device_config", {})
             current_total = device_config.get("totalWaterVolumeL", 0)
 
             _LOGGER.info(f"Resetting baseline to current device total: {current_total}ml ({current_total/1000.0:.2f}L)")
 
+            # Reset the tracking
             await coordinator.history_manager.async_reset_water_tracking(current_total)
 
             _LOGGER.info("Water usage tracking reset complete. Period-specific sensors should now show 0.0L until new usage is detected.")
@@ -335,6 +349,7 @@ def async_register_services(hass: HomeAssistant) -> None:
         """List all available schedules with their details."""
         try:
             coordinator = get_coordinator()
+            # Force a refresh to get latest schedules data
             await coordinator.async_request_refresh()
 
             data = coordinator.data
@@ -353,6 +368,7 @@ def async_register_services(hass: HomeAssistant) -> None:
             _LOGGER.info("=== Manual Data Refresh Requested ===")
             coordinator = get_coordinator()
 
+            # Force a refresh with verbose logging and get the dictionary response
             data = await hass.async_add_executor_job(coordinator._fetch, True)
 
             _LOGGER.info("Manual refresh completed - returning full API response.")

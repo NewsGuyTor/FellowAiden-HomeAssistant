@@ -210,17 +210,12 @@ create_schedule:
       default: false
       selector:
         boolean:
-    secondFromStartOfTheDay:
-      name: "Time of Day (seconds)"
-      description: "Time in seconds from start of day (0-86399). E.g., 6:30 AM = 23400"
+    time:
+      name: "Time"
+      description: "Time of day to run the schedule (e.g., '07:30:00')"
       required: true
-      example: 23400
       selector:
-        number:
-          min: 0
-          max: 86399
-          step: 1
-          mode: box
+        time:
     amountOfWater:
       name: "Water Amount (mL)"
       description: "Amount of water to use for brewing (150-1500 mL)"
@@ -304,7 +299,7 @@ start_brew:
         text:
     water_amount:
       name: "Water Amount (mL)"
-      description: "Amount of water to use for brewing (optional)"
+      description: "Amount of water to use for brewing (150-1500 mL). Uses device default if not specified."
       required: false
       example: 500
       selector:
@@ -345,7 +340,7 @@ reset_water_tracking:
   fields: {}
 
 list_schedules:
-  name: "List All Schedules"  
+  name: "List All Schedules"
   description: "List all available brew schedules with their details"
   fields: {}
 
