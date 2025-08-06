@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, ServiceResponse, SupportsResponse
 
 from .const import DOMAIN, PLATFORMS
 from .coordinator import FellowAidenDataUpdateCoordinator
@@ -22,7 +22,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     _LOGGER.debug("Creating coordinator")
     coordinator = FellowAidenDataUpdateCoordinator(hass, entry, email, password)
-    
+
     _LOGGER.debug("Performing first refresh")
     await coordinator.async_config_entry_first_refresh()
     _LOGGER.debug(f"First refresh completed, data available: {coordinator.data is not None}")
@@ -32,14 +32,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Forward platforms (sensor, etc.) and register services
     _LOGGER.debug(f"Forwarding platforms: {PLATFORMS}")
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    
+
     # Only register services once, not per config entry
     if not hass.services.has_service(DOMAIN, "create_profile"):
         _LOGGER.debug("Registering services")
         async_register_services(hass)
     else:
         _LOGGER.debug("Services already registered, skipping")
-    
+
     _LOGGER.info("Fellow Aiden integration setup completed successfully")
     return True
 
@@ -60,7 +60,7 @@ def async_register_services(hass: HomeAssistant) -> None:
         domain_data = hass.data.get(DOMAIN, {})
         if not domain_data:
             raise ValueError("No Fellow Aiden integrations configured")
-        
+
         # Get the first available coordinator
         entry_id = next(iter(domain_data.keys()))
         return domain_data[entry_id]
@@ -71,7 +71,7 @@ def async_register_services(hass: HomeAssistant) -> None:
         data = coordinator.data
         if not data or "profiles" not in data:
             return None
-        
+
         for profile in data["profiles"]:
             if profile.get("title") == profile_name:
                 return profile.get("id")
@@ -131,7 +131,7 @@ def async_register_services(hass: HomeAssistant) -> None:
         profile_input = call.data.get("profileName", call.data.get("profileId"))
         if not profile_input:
             raise ValueError("Either profileName or profileId must be provided")
-        
+
         # Try to get profile ID by name first, fall back to direct ID
         profile_id = get_profile_id_by_name(profile_input)
         if not profile_id:
@@ -194,7 +194,7 @@ def async_register_services(hass: HomeAssistant) -> None:
         # Handle profile name to ID conversion
         profile_input = call.data.get("profileName", call.data.get("profile_id"))
         profile_id = None
-        
+
         if profile_input:
             # Try to get profile ID by name first, fall back to direct ID
             profile_id = get_profile_id_by_name(profile_input)
@@ -207,207 +207,183 @@ def async_register_services(hass: HomeAssistant) -> None:
                 else:
                     available_names = get_available_profile_names()
                     raise ValueError(f"Profile '{profile_input}' not found. Available profiles: {', '.join(available_names)}")
-        
+
         coordinator = get_coordinator()
         water_amount = call.data.get("water_amount")
         _LOGGER.info("Starting brew with profile_id=%s, water_amount=%s", profile_id, water_amount)
         await hass.async_add_executor_job(coordinator.start_brew, profile_id, water_amount)
         _LOGGER.info("Brew started successfully")
 
-    async def async_list_profiles(call) -> None:
+    async def async_list_profiles(call) -> ServiceResponse:
         """List all available profiles with names and IDs."""
         coordinator = get_coordinator()
         data = coordinator.data
         if not data or "profiles" not in data or not data["profiles"]:
             _LOGGER.info("No profiles available")
-            return
-        
-        profiles_info = []
-        for profile in data["profiles"]:
-            profile_info = {
+            return {"profiles": []}
+
+        profiles_info = [
+            {
                 "id": profile.get("id"),
                 "title": profile.get("title", "Unnamed Profile"),
-                "isDefault": profile.get("isDefaultProfile", False)
+                "isDefault": profile.get("isDefaultProfile", False),
             }
-            profiles_info.append(profile_info)
-        
-        _LOGGER.info(f"Available profiles ({len(profiles_info)}):")
-        for profile in profiles_info:
-            default_marker = " (DEFAULT)" if profile["isDefault"] else ""
-            _LOGGER.info(f"  - {profile['title']} (ID: {profile['id']}){default_marker}")
+            for profile in data["profiles"]
+        ]
 
-    async def async_get_profile_details(call) -> None:
+        _LOGGER.info(f"Returning {len(profiles_info)} profiles as service response.")
+        return {"profiles": profiles_info}
+
+    async def async_get_profile_details(call) -> ServiceResponse:
         """Get detailed information about a specific profile."""
         profile_input = call.data.get("profile_name", call.data.get("profile_id"))
         if not profile_input:
             _LOGGER.error("Either profile_name or profile_id must be provided")
-            return
-        
+            return {"error": "Either profile_name or profile_id must be provided"}
+
         coordinator = get_coordinator()
         data = coordinator.data
         if not data or "profiles" not in data or not data["profiles"]:
             _LOGGER.error("No profiles available")
-            return
-        
+            return {"error": "No profiles available"}
+
         # Find the profile
-        target_profile = None
-        for profile in data["profiles"]:
-            if (profile.get("title") == profile_input or 
-                profile.get("id") == profile_input):
-                target_profile = profile
-                break
-        
+        target_profile = next(
+            (
+                profile for profile in data["profiles"]
+                if profile.get("title") == profile_input or profile.get("id") == profile_input
+            ),
+            None,
+        )
+
         if not target_profile:
             available_names = [p.get("title", "Unnamed") for p in data["profiles"]]
-            available_ids = [p.get("id") for p in data["profiles"]]
-            _LOGGER.error(f"Profile '{profile_input}' not found.")
-            _LOGGER.info(f"Available profile names: {', '.join(available_names)}")
-            _LOGGER.info(f"Available profile IDs: {', '.join(available_ids)}")
-            return
-        
-        _LOGGER.info(f"Profile Details for '{target_profile.get('title', 'Unnamed')}':") 
-        for key, value in target_profile.items():
-            _LOGGER.info(f"  {key}: {value}")
+            _LOGGER.error(f"Profile '{profile_input}' not found. Available: {', '.join(available_names)}")
+            return {"error": f"Profile '{profile_input}' not found"}
 
-    async def async_debug_water_usage(call) -> None:
-        """Debug water usage history by logging all records."""
-        _LOGGER.info("=== Water Usage Debug Information ===")
+        _LOGGER.info(f"Returning details for profile '{target_profile.get('title', 'Unnamed')}'")
+        return {"profile": target_profile}
+
+    async def async_debug_water_usage(call) -> ServiceResponse:
+        """Debug water usage history by returning all records."""
+        _LOGGER.info("=== Returning Water Usage Debug Information ===")
         coordinator = get_coordinator()
-        coordinator.history_manager.debug_water_usage_history()
-        
-        # Also show current device water totals
+
+        history = coordinator.history_manager._water_usage_history
         device_config = coordinator.data.get("device_config", {})
         current_total = device_config.get("totalWaterVolumeL", 0)
-        _LOGGER.info(f"Current device total water: {current_total}ml ({current_total/1000.0:.2f}L)")
+
+        return {
+            "water_usage_history": history,
+            "current_device_total_ml": current_total,
+            "last_tracked_total_ml": coordinator.history_manager._last_total_water,
+        }
 
     async def async_reset_water_tracking(call) -> None:
         """Reset water usage tracking to current device total."""
         try:
             _LOGGER.info("=== Resetting Water Usage Tracking ===")
             coordinator = get_coordinator()
-            
+
             # Get current device water total
             device_config = coordinator.data.get("device_config", {})
             current_total = device_config.get("totalWaterVolumeL", 0)
-            
+
             _LOGGER.info(f"Resetting baseline to current device total: {current_total}ml ({current_total/1000.0:.2f}L)")
-            
+
             # Reset the tracking
             await coordinator.history_manager.async_reset_water_tracking(current_total)
-            
+
             _LOGGER.info("Water usage tracking reset complete. Period-specific sensors should now show 0.0L until new usage is detected.")
         except Exception as e:
             _LOGGER.error("Failed to reset water tracking: %s", e)
             raise
 
-    async def async_list_schedules(call) -> None:
+    async def async_list_schedules(call) -> ServiceResponse:
         """List all available schedules with their details."""
         try:
             coordinator = get_coordinator()
             # Force a refresh to get latest schedules data
             await coordinator.async_request_refresh()
-            
+
             data = coordinator.data
-            _LOGGER.info("=== Current Schedules ===")
-            
-            # Check if schedules data is available in the response
-            if data and "schedules" in data and data["schedules"]:
-                schedules = data["schedules"]
-                _LOGGER.info(f"Found {len(schedules)} schedules:")
-                for i, schedule in enumerate(schedules):
-                    _LOGGER.info(f"Schedule {i+1}:")
-                    for key, value in schedule.items():
-                        _LOGGER.info(f"  {key}: {value}")
-            else:
-                _LOGGER.info("No schedules found or schedules not available in API response")
-                _LOGGER.info("Available data keys: %s", list(data.keys()) if data else "No data")
+            schedules = data.get("schedules", []) if data else []
+
+            _LOGGER.info(f"Returning {len(schedules)} schedules as service response.")
+            return {"schedules": schedules}
+
         except Exception as e:
             _LOGGER.error("Failed to list schedules: %s", e)
-            raise
+            return {"error": f"Failed to list schedules: {e}"}
 
-    async def async_refresh_and_log_data(call) -> None:
+    async def async_refresh_and_log_data(call) -> ServiceResponse:
         """Manually refresh data and log full API response."""
         try:
             _LOGGER.info("=== Manual Data Refresh Requested ===")
             coordinator = get_coordinator()
-            
-            # Force a refresh with verbose logging
-            await hass.async_add_executor_job(coordinator._fetch, True)
-            
-            _LOGGER.info("Manual refresh completed - check logs above for full API response")
+
+            # Force a refresh with verbose logging and get the dictionary response
+            data = await hass.async_add_executor_job(coordinator._fetch, True)
+
+            _LOGGER.info("Manual refresh completed - returning full API response.")
+            return data
         except Exception as e:
             _LOGGER.error("Failed to refresh and log data: %s", e)
-            raise
+            return {"error": f"Failed to refresh and log data: {e}"}
 
     hass.services.async_register(
-        DOMAIN,
-        "create_profile",
-        async_create_profile,
-        schema=None
+        DOMAIN, "create_profile", async_create_profile, schema=None
     )
     hass.services.async_register(
-        DOMAIN,
-        "delete_profile",
-        async_delete_profile,
-        schema=None
+        DOMAIN, "delete_profile", async_delete_profile, schema=None
     )
     hass.services.async_register(
-        DOMAIN,
-        "create_schedule",
-        async_create_schedule,
-        schema=None
+        DOMAIN, "create_schedule", async_create_schedule, schema=None
     )
     hass.services.async_register(
-        DOMAIN,
-        "delete_schedule",
-        async_delete_schedule,
-        schema=None
+        DOMAIN, "delete_schedule", async_delete_schedule, schema=None
     )
     hass.services.async_register(
-        DOMAIN,
-        "toggle_schedule",
-        async_toggle_schedule,
-        schema=None
+        DOMAIN, "toggle_schedule", async_toggle_schedule, schema=None
     )
     hass.services.async_register(
-        DOMAIN,
-        "start_brew",
-        async_start_brew,
-        schema=None
+        DOMAIN, "start_brew", async_start_brew, schema=None
     )
     hass.services.async_register(
         DOMAIN,
         "list_profiles",
         async_list_profiles,
-        schema=None
+        schema=None,
+        supports_response=SupportsResponse.ONLY,
     )
     hass.services.async_register(
         DOMAIN,
         "get_profile_details",
         async_get_profile_details,
-        schema=None
+        schema=None,
+        supports_response=SupportsResponse.ONLY,
     )
     hass.services.async_register(
         DOMAIN,
         "debug_water_usage",
         async_debug_water_usage,
-        schema=None
+        schema=None,
+        supports_response=SupportsResponse.ONLY,
     )
     hass.services.async_register(
-        DOMAIN,
-        "reset_water_tracking",
-        async_reset_water_tracking,
-        schema=None
+        DOMAIN, "reset_water_tracking", async_reset_water_tracking, schema=None
     )
     hass.services.async_register(
         DOMAIN,
         "list_schedules",
         async_list_schedules,
-        schema=None
+        schema=None,
+        supports_response=SupportsResponse.ONLY,
     )
     hass.services.async_register(
         DOMAIN,
         "refresh_and_log_data",
         async_refresh_and_log_data,
-        schema=None
+        schema=None,
+        supports_response=SupportsResponse.ONLY,
     )
