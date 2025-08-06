@@ -51,13 +51,13 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         try:
             _LOGGER.debug("Executing _fetch in executor")
             data = await self.hass.async_add_executor_job(self._fetch)
-            
+
             # Update historical data with the new data
             _LOGGER.debug("Updating historical data")
             device_config = data.get("device_config", {})
             profiles = data.get("profiles", [])
             await self.history_manager.async_update_data(device_config, profiles)
-            
+
             _LOGGER.debug("Data update completed successfully")
             return data
         except UpdateFailed:
@@ -110,7 +110,7 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         else:
             # Only log summary info during regular polling
             _LOGGER.debug(f"Polled: {len(profiles) if profiles else 0} profiles, {len(schedules) if schedules else 0} schedules, device: {brewer_name}")
-        
+
         _LOGGER.debug(f"Fetched brewer name: {brewer_name}")
         _LOGGER.debug(f"Fetched profiles: {profiles}")
         _LOGGER.debug(f"Fetched device config: {device_config}")
@@ -208,36 +208,36 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._fetch(verbose_logging=True)  # Refresh internal data
 
     def start_brew(self, profile_id: str, water_amount: int = None) -> None:
-        """Start a brew by creating a temporary schedule 1 minute in the future."""
+        """Start a brew by creating a temporary schedule 2 minutes in the future."""
         if not self.api:
             raise RuntimeError("Fellow Aiden library not initialized")
-        
+
         _LOGGER.info("=== Starting Brew ===")
         _LOGGER.info(f"Profile ID: {profile_id}, Water Amount: {water_amount}")
-        
+
         try:
-            # Calculate time 1 minute from now
+            # Calculate time 2 minutes from now
             from datetime import datetime, timedelta
             now = datetime.now()
-            brew_time = now + timedelta(minutes=1)
-            seconds_from_start_of_day = (brew_time.hour * 3600 + 
-                                       brew_time.minute * 60 + 
+            brew_time = now + timedelta(minutes=2)
+            seconds_from_start_of_day = (brew_time.hour * 3600 +
+                                       brew_time.minute * 60 +
                                        brew_time.second)
-            
+
             # Use default water amount if not specified
             if not water_amount:
                 water_amount = 420  # Default 420ml
-            
+
             # Create a temporary schedule for today only
             weekday = brew_time.weekday()  # 0=Monday, 6=Sunday
             days = [False] * 7  # Sunday first for API
-            
+
             # Convert weekday to Sunday-first format (API expects Sunday=0)
             if weekday == 6:  # Sunday
                 days[0] = True
             else:  # Monday=1, Tuesday=2, etc.
                 days[weekday + 1] = True
-            
+
             schedule_data = {
                 "days": days,
                 "secondFromStartOfTheDay": seconds_from_start_of_day,
@@ -245,14 +245,14 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "amountOfWater": water_amount,
                 "profileId": profile_id,
             }
-            
+
             _LOGGER.info(f"Creating temporary brew schedule for {brew_time.strftime('%H:%M:%S')} with profile {profile_id}")
             _LOGGER.info(f"Schedule data: {schedule_data}")
             result = self.api.create_schedule(schedule_data)
             _LOGGER.info(f"Brew schedule creation result: {result}")
             _LOGGER.info("=== Brew Started Successfully ===")
             self._fetch(verbose_logging=True)  # Refresh internal data
-            
+
         except Exception as e:
             _LOGGER.error(f"Failed to start brew: {e}")
             raise RuntimeError(f"Failed to start brew: {e}") from e

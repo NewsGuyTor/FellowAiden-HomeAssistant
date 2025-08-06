@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import time
+from datetime import time, datetime
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceResponse, SupportsResponse
@@ -150,13 +150,19 @@ def async_register_services(hass: HomeAssistant) -> None:
                     available_names = get_available_profile_names()
                     raise ValueError(f"Profile '{profile_input}' not found. Available profiles: {', '.join(available_names)}")
 
-            # Get time object from service call and convert to seconds
-            time_input: time | None = call.data.get("time")
-            if not time_input:
+            # Get the time string from the service call
+            time_str: str | None = call.data.get("time")
+            if not time_str:
                 raise ValueError("'time' must be provided for the schedule")
 
+            # Parse the string into a time object
+            try:
+                time_obj = time.fromisoformat(time_str)
+            except ValueError:
+                raise ServiceValidationError(f"Invalid time format: '{time_str}'. Please use HH:MM:SS format.")
+
             seconds_from_start_of_day = (
-                time_input.hour * 3600 + time_input.minute * 60 + time_input.second
+                time_obj.hour * 3600 + time_obj.minute * 60 + time_obj.second
             )
 
             data = {
