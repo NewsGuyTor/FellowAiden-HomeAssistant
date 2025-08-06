@@ -6,9 +6,6 @@ PLATFORMS = ["sensor", "select", "binary_sensor"]
 DEFAULT_UPDATE_INTERVAL_MINUTES = 1
 MIN_UPDATE_INTERVAL_SECONDS = 30
 
-# Brew timing constants
-DEFAULT_WATER_AMOUNT_ML = 420
-BREW_START_DELAY_MINUTES = 2
 
 # Historical data constants
 HISTORY_RETENTION_DAYS = 365

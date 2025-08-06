@@ -8,7 +8,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceResponse, SupportsResponse
 from homeassistant.exceptions import ServiceValidationError
 
-from .const import DOMAIN, PLATFORMS, DEFAULT_WATER_AMOUNT_ML, DEFAULT_PROFILE_TYPE
+from .const import DOMAIN, PLATFORMS, DEFAULT_PROFILE_TYPE
 from .coordinator import FellowAidenDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -225,55 +225,6 @@ def async_register_services(hass: HomeAssistant) -> None:
             _LOGGER.error("Failed to toggle schedule: %s", e)
             raise
 
-    async def async_start_brew(call) -> None:
-        """Start an immediate brew on the Aiden device."""
-        profile_id = None
-        coordinator = get_coordinator()
-
-        # Handle profile name to ID conversion if provided
-        profile_input = call.data.get("profileName") or call.data.get("profile_id")
-
-        if profile_input:
-            # Try to get profile ID by name first
-            profile_id = get_profile_id_by_name(profile_input)
-            if not profile_id:
-                # Assume it's already an ID - validate format
-                import re
-                profile_id_regex = re.compile(r'^(p|plocal)\d+$')
-                if profile_id_regex.match(profile_input):
-                    profile_id = profile_input  # Use the provided ID
-                else:
-                    available_names = get_available_profile_names()
-                    raise ServiceValidationError(
-                        f"Profile '{profile_input}' not found. Available profiles: {', '.join(available_names)}"
-                    )
-
-        # If profile_id is still None, find the default profile
-        if not profile_id:
-            _LOGGER.debug("No profile specified by user, finding default profile.")
-            profiles = coordinator.data.get("profiles", [])
-            if not profiles:
-                raise ServiceValidationError("Cannot start brew: No brew profiles exist on the device.")
-
-            # Find the profile flagged as default by the API
-            default_profile = next((p for p in profiles if p.get("isDefaultProfile")), None)
-
-            if default_profile:
-                profile_id = default_profile.get("id")
-                _LOGGER.info(f"Using default profile: '{default_profile.get('title')}' (ID: {profile_id})")
-            else:
-                # Fallback to the first profile in the list if no explicit default is set
-                profile_id = profiles[0].get("id")
-                _LOGGER.info(f"No default profile set. Using first available profile: '{profiles[0].get('title')}' (ID: {profile_id})")
-
-        # Final check to ensure we have a profile ID
-        if not profile_id:
-            raise ServiceValidationError("Could not determine a profile to use for the brew. Please ensure at least one profile exists.")
-
-        water_amount = call.data.get("water_amount")
-        _LOGGER.info("Requesting to start brew with profile_id=%s, water_amount=%s", profile_id, water_amount)
-        await hass.async_add_executor_job(coordinator.start_brew, profile_id, water_amount)
-        _LOGGER.info("Brew start request sent successfully")
 
     async def async_list_profiles(call) -> ServiceResponse:
         """List all available profiles with names and IDs."""
@@ -406,9 +357,6 @@ def async_register_services(hass: HomeAssistant) -> None:
     )
     hass.services.async_register(
         DOMAIN, "toggle_schedule", async_toggle_schedule, schema=None
-    )
-    hass.services.async_register(
-        DOMAIN, "start_brew", async_start_brew, schema=None
     )
     hass.services.async_register(
         DOMAIN,

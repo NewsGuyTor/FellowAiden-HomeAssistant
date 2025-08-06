@@ -186,24 +186,6 @@
         }
       }
     },
-    "start_brew": {
-      "name": "Iniciar Preparación Ahora",
-      "description": "Inicia una preparación inmediata (programada para 2 minutos a partir de ahora). ⚠️ ADVERTENCIA: ¡Asegúrate de que la jarra/taza esté en su lugar para evitar derrames!",
-      "fields": {
-        "profile_name": {
-          "name": "Nombre del Perfil",
-          "description": "Nombre del perfil de preparación a usar. Usa el perfil predeterminado si no se especifica."
-        },
-        "profile_id": {
-          "name": "ID del Perfil (Alternativo)",
-          "description": "ID del perfil de preparación a usar en lugar de su nombre. Usa el predeterminado si no se especifica."
-        },
-        "water_amount": {
-          "name": "Cantidad de Agua (mL)",
-          "description": "Cantidad de agua a usar (150-1500 mL). Usa el predeterminado del dispositivo si no se especifica."
-        }
-      }
-    },
     "list_profiles": {
       "name": "Listar Todos los Perfiles",
       "description": "Lista todos los perfiles de preparación disponibles con sus nombres e IDs."

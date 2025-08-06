@@ -280,36 +280,6 @@ toggle_schedule:
       selector:
         boolean:
 
-start_brew:
-  name: "Start Brew Now"
-  description: "Starts an immediate brew (scheduled 2 minutes from now). ⚠️ WARNING: Ensure carafe/cup is in place to prevent spills!"
-  fields:
-    profileName:
-      name: "Profile Name"
-      description: "Name of the brew profile to use. Uses the default profile if not specified."
-      required: false
-      example: "My Morning Coffee"
-      selector:
-        text:
-    profile_id:
-      name: "Profile ID (Alternative)"
-      description: "ID of the brew profile to use instead of its name. Uses default if not specified."
-      required: false
-      example: "p1"
-      selector:
-        text:
-    water_amount:
-      name: "Water Amount (mL)"
-      description: "Amount of water to use (150-1500 mL). Uses the device default if not specified."
-      required: false
-      example: 500
-      selector:
-        number:
-          min: 150
-          max: 1500
-          step: 1
-          unit_of_measurement: "mL"
-          mode: box
 
 list_profiles:
   name: "List All Profiles"

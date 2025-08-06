@@ -11,11 +11,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .fellow_aiden import FellowAiden
 from .brew_history import BrewHistoryManager
-from .const import (
-    DEFAULT_UPDATE_INTERVAL_MINUTES,
-    DEFAULT_WATER_AMOUNT_ML,
-    BREW_START_DELAY_MINUTES,
-)
+from .const import DEFAULT_UPDATE_INTERVAL_MINUTES
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -217,52 +213,3 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise
         self._fetch(verbose_logging=True)  # Refresh internal data
 
-    def start_brew(self, profile_id: str, water_amount: int = None) -> None:
-        """Start a brew by creating a temporary schedule with configured delay."""
-        if not self.api:
-            raise RuntimeError("Fellow Aiden library not initialized")
-
-        _LOGGER.info("=== Starting Brew ===")
-        _LOGGER.info(f"Profile ID: {profile_id}, Water Amount: {water_amount}")
-
-        try:
-            # Calculate time with configured delay from now
-            from datetime import datetime, timedelta
-            now = datetime.now()
-            brew_time = now + timedelta(minutes=BREW_START_DELAY_MINUTES)
-            seconds_from_start_of_day = (brew_time.hour * 3600 +
-                                       brew_time.minute * 60 +
-                                       brew_time.second)
-
-            # Use default water amount if not specified
-            if not water_amount:
-                water_amount = DEFAULT_WATER_AMOUNT_ML
-
-            # Create a temporary schedule for today only
-            weekday = brew_time.weekday()  # 0=Monday, 6=Sunday
-            days = [False] * 7  # Sunday first for API
-
-            # Convert weekday to Sunday-first format (API expects Sunday=0)
-            if weekday == 6:  # Sunday
-                days[0] = True
-            else:  # Monday=1, Tuesday=2, etc.
-                days[weekday + 1] = True
-
-            schedule_data = {
-                "days": days,
-                "secondFromStartOfTheDay": seconds_from_start_of_day,
-                "enabled": True,
-                "amountOfWater": water_amount,
-                "profileId": profile_id,
-            }
-
-            _LOGGER.info(f"Creating temporary brew schedule for {brew_time.strftime('%H:%M:%S')} with profile {profile_id}")
-            _LOGGER.info(f"Schedule data: {schedule_data}")
-            result = self.api.create_schedule(schedule_data)
-            _LOGGER.info(f"Brew schedule creation result: {result}")
-            _LOGGER.info("=== Brew Started Successfully ===")
-            self._fetch(verbose_logging=True)  # Refresh internal data
-
-        except Exception as e:
-            _LOGGER.error(f"Failed to start brew: {e}")
-            raise RuntimeError(f"Failed to start brew: {e}") from e

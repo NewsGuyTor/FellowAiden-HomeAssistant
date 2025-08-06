@@ -186,24 +186,6 @@
         }
       }
     },
-    "start_brew": {
-      "name": "Start Brew Now",
-      "description": "Starts an immediate brew (scheduled 2 minutes from now). ⚠️ WARNING: Ensure carafe/cup is in place to prevent spills!",
-      "fields": {
-        "profile_name": {
-          "name": "Profile Name",
-          "description": "Name of the brew profile to use. Uses the default profile if not specified."
-        },
-        "profile_id": {
-          "name": "Profile ID (Alternative)",
-          "description": "ID of the brew profile to use instead of its name. Uses default if not specified."
-        },
-        "water_amount": {
-          "name": "Water Amount (mL)",
-          "description": "Amount of water to use (150-1500 mL). Uses the device default if not specified."
-        }
-      }
-    },
     "list_profiles": {
       "name": "List All Profiles",
       "description": "Lists all available brew profiles with their names and IDs."
