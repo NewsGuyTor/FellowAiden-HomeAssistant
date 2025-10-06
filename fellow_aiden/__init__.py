@@ -21,7 +21,7 @@ class FellowAiden:
     """Fellow object to interact with Aiden brewer."""
 
     NAME = "FELLOW-AIDEN"
-    LOG_LEVEL = logging.DEBUG
+    LOG_LEVEL = logging.INFO
     INTERVAL = 0.5
     BASE_URL = 'https://l8qtmnc692.execute-api.us-west-2.amazonaws.com/v1'
     API_AUTH = '/auth/login'
