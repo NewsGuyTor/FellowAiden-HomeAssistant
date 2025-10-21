@@ -3,7 +3,6 @@ import json
 import logging
 import re
 import requests
-import sys
 from difflib import SequenceMatcher
 from .profile import CoffeeProfile
 from .schedule import CoffeeSchedule
@@ -17,11 +16,10 @@ def similar(a, b):
 
     
 class FellowAiden:
-    
+
     """Fellow object to interact with Aiden brewer."""
 
-    NAME = "FELLOW-AIDEN"
-    LOG_LEVEL = logging.INFO
+    LOGGER_NAME = "custom_components.fellow.fellow_aiden.api"
     INTERVAL = 0.5
     BASE_URL = 'https://l8qtmnc692.execute-api.us-west-2.amazonaws.com/v1'
     API_AUTH = '/auth/login'
@@ -73,14 +71,7 @@ class FellowAiden:
 
         :returns: Logging instance.
         """
-        logger = logging.getLogger(self.NAME)
-        logger.setLevel(self.LOG_LEVEL)
-        shandler = logging.StreamHandler(sys.stdout)
-        fmt = '\033[1;32m%(levelname)-5s %(module)s:%(funcName)s():'
-        fmt += '%(lineno)d %(asctime)s\033[0m| %(message)s'
-        shandler.setFormatter(logging.Formatter(fmt))
-        logger.addHandler(shandler)
-        return logger
+        return logging.getLogger(self.LOGGER_NAME)
         
     def __auth(self):
         self._log.debug("Authenticating user")
@@ -122,7 +113,7 @@ class FellowAiden:
 
 
         self._log.debug("Brewer ID: %s" % self._brewer_id)
-        self._log.info("Device and profile information set")
+        self._log.debug("Device and profile information set")
 
     @property
     def profiles(self):
@@ -314,7 +305,7 @@ class FellowAiden:
             raise Exception(f"Error updating profile: {parsed}")
         
         self.__device()  # Refresh profiles
-        self._log.info(f"Profile {profile_id} updated successfully")
+        self._log.debug(f"Profile {profile_id} updated successfully")
         return True
     
     def create_schedule(self, data):
@@ -393,7 +384,7 @@ class FellowAiden:
             # Retry the request with the new token
             response = self.SESSION.delete(delete_url)
             
-        self._log.info("Profile deleted")
+        self._log.debug("Profile deleted")
         return True
     
     def delete_schedule_by_id(self, sid):
@@ -404,7 +395,7 @@ class FellowAiden:
         delete_url = self.BASE_URL + self.API_SCHEDULE.format(id=self._brewer_id, sid=sid)
         self._log.debug(delete_url)
         response = self.SESSION.delete(delete_url)
-        self._log.info("Schedule deleted")
+        self._log.debug("Schedule deleted")
         return True
     
     def adjust_setting(self, setting, value):
