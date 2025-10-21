@@ -63,7 +63,7 @@ class FellowAidenOptionsFlowHandler(config_entries.OptionsFlow):
 
     def __init__(self, config_entry):
         """Initialize."""
-        self.config_entry = config_entry
+        self._config_entry = config_entry
 
     async def async_step_init(self, user_input=None):
         """Manage the options."""
@@ -78,7 +78,7 @@ class FellowAidenOptionsFlowHandler(config_entries.OptionsFlow):
                 return self.async_create_entry(title="", data=user_input)
 
         # Get current values or defaults
-        current_interval = self.config_entry.options.get(
+        current_interval = self._config_entry.options.get(
             "update_interval_seconds", DEFAULT_UPDATE_INTERVAL_MINUTES * 60
         )
 
