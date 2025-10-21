@@ -69,6 +69,5 @@ class FellowAidenProfilesSelect(CoordinatorEntity, SelectEntity):
         Currently disabled - use services to manage profiles instead.
         """
         _LOGGER.info("Profile selection attempted for '%s', but this feature is disabled", option)
-        _LOGGER.info("Use the fellow.start_brew service with profileName parameter instead")
+        _LOGGER.info("Use schedules or device controls to start a brew with a specific profile instead")
         # Note: This method is required by Home Assistant but we don't implement profile switching
-        # Users should use the fellow.start_brew service to brew with specific profiles

@@ -32,7 +32,6 @@ This is a custom integration that brings your coffee brewer into the Home Assist
 - **Brew Management:** 
   - Create, list, delete, and manage brew profiles from Home Assistant
   - Schedule management
-  - Start immediate brews with custom parameters
   - Profile selection dropdown (display-only)
 - **Services:** A collection of services for all brewing operations
 - **Smart Logging:** Detailed API logging for manual operations, quiet polling for regular updates
@@ -128,7 +127,7 @@ Choose one of the following methods to install the **Fellow Aiden** integration:
 - **`fellow.list_schedules`**: List all current schedules with full details
 
 ### Brewing Operations
-- **`fellow.start_brew`**: Start an immediate brew (scheduled 1 minute from now)
+- _No direct start brew service (use device controls or schedules)._
 
 ### Analytics & Debugging
 - **`fellow.reset_water_tracking`**: Reset water usage tracking baseline

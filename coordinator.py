@@ -25,6 +25,7 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.password = password
         self.api: FellowAiden | None = None
         self.history_manager = BrewHistoryManager(hass, entry.entry_id)
+        self._next_refresh_verbose = False
 
         # Get update interval from options or use default
         update_interval_seconds = entry.options.get(
@@ -56,7 +57,9 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         try:
             _LOGGER.debug("Executing _fetch in executor")
-            data = await self.hass.async_add_executor_job(self._fetch)
+            verbose_logging = self._next_refresh_verbose
+            self._next_refresh_verbose = False
+            data = await self.hass.async_add_executor_job(self._fetch, verbose_logging)
 
             # Update historical data with the new data
             _LOGGER.debug("Updating historical data")
@@ -138,78 +141,90 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return result
 
 
-    def create_profile(self, profile_data: dict[str, Any]) -> None:
-        """Create a new brew profile."""
+    async def async_create_profile(self, profile_data: dict[str, Any]) -> None:
+        """Create a new brew profile and refresh coordinator data."""
         if not self.api:
             raise RuntimeError("Fellow Aiden library not initialized")
         _LOGGER.info("=== Creating Profile ===")
         _LOGGER.info(f"Profile data: {profile_data}")
         try:
-            result = self.api.create_profile(profile_data)
+            result = await self.hass.async_add_executor_job(self.api.create_profile, profile_data)
             _LOGGER.info(f"Profile creation result: {result}")
             _LOGGER.info("=== Profile Created Successfully ===")
         except Exception as e:
             _LOGGER.error(f"Profile creation failed: {e}")
             raise
-        self._fetch(verbose_logging=True)  # Refresh internal data
+        self._next_refresh_verbose = True
+        await self.async_request_refresh()
 
-    def delete_profile(self, profile_id: str) -> None:
-        """Delete a brew profile."""
+    async def async_delete_profile(self, profile_id: str) -> None:
+        """Delete a brew profile and refresh coordinator data."""
         if not self.api:
             raise RuntimeError("Fellow Aiden library not initialized")
         _LOGGER.info("=== Deleting Profile ===")
         _LOGGER.info(f"Profile ID: {profile_id}")
         try:
-            result = self.api.delete_profile_by_id(profile_id)
+            result = await self.hass.async_add_executor_job(
+                self.api.delete_profile_by_id, profile_id
+            )
             _LOGGER.info(f"Profile deletion result: {result}")
             _LOGGER.info("=== Profile Deleted Successfully ===")
         except Exception as e:
             _LOGGER.error(f"Profile deletion failed: {e}")
             raise
-        self._fetch(verbose_logging=True)  # Refresh internal data
+        self._next_refresh_verbose = True
+        await self.async_request_refresh()
 
-    def create_schedule(self, schedule_data: dict[str, Any]) -> None:
-        """Create a new brew schedule."""
+    async def async_create_schedule(self, schedule_data: dict[str, Any]) -> None:
+        """Create a new brew schedule and refresh coordinator data."""
         if not self.api:
             raise RuntimeError("Fellow Aiden library not initialized")
         _LOGGER.info("=== Creating Schedule ===")
         _LOGGER.info(f"Schedule data: {schedule_data}")
         try:
-            result = self.api.create_schedule(schedule_data)
+            result = await self.hass.async_add_executor_job(
+                self.api.create_schedule, schedule_data
+            )
             _LOGGER.info(f"Schedule creation result: {result}")
             _LOGGER.info("=== Schedule Created Successfully ===")
         except Exception as e:
             _LOGGER.error(f"Schedule creation failed: {e}")
             raise
-        self._fetch(verbose_logging=True)  # Refresh internal data
+        self._next_refresh_verbose = True
+        await self.async_request_refresh()
 
-    def delete_schedule(self, schedule_id: str) -> None:
-        """Delete a brew schedule."""
+    async def async_delete_schedule(self, schedule_id: str) -> None:
+        """Delete a brew schedule and refresh coordinator data."""
         if not self.api:
             raise RuntimeError("Fellow Aiden library not initialized")
         _LOGGER.info("=== Deleting Schedule ===")
         _LOGGER.info(f"Schedule ID: {schedule_id}")
         try:
-            result = self.api.delete_schedule_by_id(schedule_id)
+            result = await self.hass.async_add_executor_job(
+                self.api.delete_schedule_by_id, schedule_id
+            )
             _LOGGER.info(f"Schedule deletion result: {result}")
             _LOGGER.info("=== Schedule Deleted Successfully ===")
         except Exception as e:
             _LOGGER.error(f"Schedule deletion failed: {e}")
             raise
-        self._fetch(verbose_logging=True)  # Refresh internal data
+        self._next_refresh_verbose = True
+        await self.async_request_refresh()
 
-    def toggle_schedule(self, schedule_id: str, enabled: bool) -> None:
-        """Enable or disable a brew schedule."""
+    async def async_toggle_schedule(self, schedule_id: str, enabled: bool) -> None:
+        """Enable or disable a brew schedule and refresh coordinator data."""
         if not self.api:
             raise RuntimeError("Fellow Aiden library not initialized")
         _LOGGER.info("=== Toggling Schedule ===")
         _LOGGER.info(f"Schedule ID: {schedule_id}, Enabled: {enabled}")
         try:
-            result = self.api.toggle_schedule(schedule_id, enabled)
+            result = await self.hass.async_add_executor_job(
+                self.api.toggle_schedule, schedule_id, enabled
+            )
             _LOGGER.info(f"Schedule toggle result: {result}")
             _LOGGER.info("=== Schedule Toggled Successfully ===")
         except Exception as e:
             _LOGGER.error(f"Schedule toggle failed: {e}")
             raise
-        self._fetch(verbose_logging=True)  # Refresh internal data
-
+        self._next_refresh_verbose = True
+        await self.async_request_refresh()

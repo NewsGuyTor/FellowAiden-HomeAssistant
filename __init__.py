@@ -118,7 +118,7 @@ def async_register_services(hass: HomeAssistant) -> None:
                 "batchPulseTemperatures": call.data["batchPulseTemperatures"],
             }
             _LOGGER.info("Creating profile with data: %s", data)
-            await hass.async_add_executor_job(coordinator.create_profile, data)
+            await coordinator.async_create_profile(data)
             _LOGGER.info("Profile created successfully")
         except ValueError as e:
             _LOGGER.error("Validation failed when creating profile: %s", e)
@@ -133,7 +133,7 @@ def async_register_services(hass: HomeAssistant) -> None:
             coordinator = get_coordinator()
             pid = call.data.get("profile_id")
             _LOGGER.info("Deleting profile with ID: %s", pid)
-            await hass.async_add_executor_job(coordinator.delete_profile, pid)
+            await coordinator.async_delete_profile(pid)
             _LOGGER.info("Profile deleted successfully")
         except Exception as e:
             _LOGGER.error("Failed to delete profile: %s", e)
@@ -191,7 +191,7 @@ def async_register_services(hass: HomeAssistant) -> None:
             }
             coordinator = get_coordinator()
             _LOGGER.info("Creating schedule with data: %s", data)
-            await hass.async_add_executor_job(coordinator.create_schedule, data)
+            await coordinator.async_create_schedule(data)
             _LOGGER.info("Schedule created successfully")
         except ValueError as e:
             _LOGGER.error("Validation failed when creating schedule: %s", e)
@@ -206,7 +206,7 @@ def async_register_services(hass: HomeAssistant) -> None:
             coordinator = get_coordinator()
             sid = call.data.get("schedule_id")
             _LOGGER.info("Deleting schedule with ID: %s", sid)
-            await hass.async_add_executor_job(coordinator.delete_schedule, sid)
+            await coordinator.async_delete_schedule(sid)
             _LOGGER.info("Schedule deleted successfully")
         except Exception as e:
             _LOGGER.error("Failed to delete schedule: %s", e)
@@ -219,7 +219,7 @@ def async_register_services(hass: HomeAssistant) -> None:
             sid = call.data.get("schedule_id")
             enabled = call.data.get("enabled", True)
             _LOGGER.info("Toggling schedule %s to enabled=%s", sid, enabled)
-            await hass.async_add_executor_job(coordinator.toggle_schedule, sid, enabled)
+            await coordinator.async_toggle_schedule(sid, enabled)
             _LOGGER.info("Schedule toggled successfully")
         except Exception as e:
             _LOGGER.error("Failed to toggle schedule: %s", e)
