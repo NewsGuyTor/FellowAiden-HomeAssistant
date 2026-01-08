@@ -117,7 +117,7 @@ def async_register_services(hass: HomeAssistant) -> None:
                 "batchPulsesInterval": call.data["batchPulsesInterval"],
                 "batchPulseTemperatures": call.data["batchPulseTemperatures"],
             }
-            _LOGGER.info("Creating profile with data: %s", data)
+            _LOGGER.debug("Creating profile with data: %s", data)
             await coordinator.async_create_profile(data)
             _LOGGER.info("Profile created successfully")
         except ValueError as e:
@@ -132,7 +132,9 @@ def async_register_services(hass: HomeAssistant) -> None:
         try:
             coordinator = get_coordinator()
             pid = call.data.get("profile_id")
-            _LOGGER.info("Deleting profile with ID: %s", pid)
+            if not pid:
+                raise ServiceValidationError("profile_id is required")
+            _LOGGER.debug("Deleting profile with ID: %s", pid)
             await coordinator.async_delete_profile(pid)
             _LOGGER.info("Profile deleted successfully")
         except Exception as e:
@@ -190,7 +192,7 @@ def async_register_services(hass: HomeAssistant) -> None:
                 "profileId": profile_id,
             }
             coordinator = get_coordinator()
-            _LOGGER.info("Creating schedule with data: %s", data)
+            _LOGGER.debug("Creating schedule with data: %s", data)
             await coordinator.async_create_schedule(data)
             _LOGGER.info("Schedule created successfully")
         except ValueError as e:
@@ -205,7 +207,9 @@ def async_register_services(hass: HomeAssistant) -> None:
         try:
             coordinator = get_coordinator()
             sid = call.data.get("schedule_id")
-            _LOGGER.info("Deleting schedule with ID: %s", sid)
+            if not sid:
+                raise ServiceValidationError("schedule_id is required")
+            _LOGGER.debug("Deleting schedule with ID: %s", sid)
             await coordinator.async_delete_schedule(sid)
             _LOGGER.info("Schedule deleted successfully")
         except Exception as e:
@@ -217,8 +221,10 @@ def async_register_services(hass: HomeAssistant) -> None:
         try:
             coordinator = get_coordinator()
             sid = call.data.get("schedule_id")
+            if not sid:
+                raise ServiceValidationError("schedule_id is required")
             enabled = call.data.get("enabled", True)
-            _LOGGER.info("Toggling schedule %s to enabled=%s", sid, enabled)
+            _LOGGER.debug("Toggling schedule %s to enabled=%s", sid, enabled)
             await coordinator.async_toggle_schedule(sid, enabled)
             _LOGGER.info("Schedule toggled successfully")
         except Exception as e:

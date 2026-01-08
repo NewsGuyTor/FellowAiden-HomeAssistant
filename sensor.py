@@ -216,7 +216,7 @@ class AidenBrewTimeSensor(FellowAidenBaseEntity, SensorEntity):
                 return None
             # Format datetime for display (ISO8601 format)
             return brew_datetime.strftime("%Y-%m-%d %H:%M:%S")
-        except (ValueError, TypeError) as error:
+        except (ValueError, TypeError, OSError, OverflowError) as error:
             _LOGGER.error(f"Error parsing {self._key}: {error}")
             return None
 
@@ -713,10 +713,9 @@ class AidenCurrentProfileSensor(FellowAidenBaseEntity, SensorEntity):
             if profiles_with_last_used:
                 profiles_with_last_used.sort(key=lambda x: x[1], reverse=True)
                 most_recent_timestamp = profiles_with_last_used[0][1]
-                from datetime import datetime
                 try:
                     last_used_time = datetime.fromtimestamp(most_recent_timestamp).isoformat()
-                except (ValueError, OSError):
+                except (ValueError, OSError, OverflowError):
                     pass
                 detection_method = "last_used_time"
                 confidence = "very_high"

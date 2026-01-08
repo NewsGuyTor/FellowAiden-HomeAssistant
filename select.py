@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-from typing import List
 
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
@@ -35,7 +34,7 @@ class FellowAidenProfilesSelect(CoordinatorEntity, SelectEntity):
         self._attr_name = "Fellow Aiden Profiles"
 
     @property
-    def options(self) -> List[str]:
+    def options(self) -> list[str]:
         """Return a list of profile titles."""
         data = self.coordinator.data
         if not data or "profiles" not in data:

@@ -145,12 +145,10 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Create a new brew profile and refresh coordinator data."""
         if not self.api:
             raise RuntimeError("Fellow Aiden library not initialized")
-        _LOGGER.info("=== Creating Profile ===")
-        _LOGGER.info(f"Profile data: {profile_data}")
+        _LOGGER.debug("Creating profile with data: %s", profile_data)
         try:
             result = await self.hass.async_add_executor_job(self.api.create_profile, profile_data)
-            _LOGGER.info(f"Profile creation result: {result}")
-            _LOGGER.info("=== Profile Created Successfully ===")
+            _LOGGER.debug("Profile creation result: %s", result)
         except Exception as e:
             _LOGGER.error(f"Profile creation failed: {e}")
             raise
@@ -161,14 +159,12 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Delete a brew profile and refresh coordinator data."""
         if not self.api:
             raise RuntimeError("Fellow Aiden library not initialized")
-        _LOGGER.info("=== Deleting Profile ===")
-        _LOGGER.info(f"Profile ID: {profile_id}")
+        _LOGGER.debug("Deleting profile ID: %s", profile_id)
         try:
             result = await self.hass.async_add_executor_job(
                 self.api.delete_profile_by_id, profile_id
             )
-            _LOGGER.info(f"Profile deletion result: {result}")
-            _LOGGER.info("=== Profile Deleted Successfully ===")
+            _LOGGER.debug("Profile deletion result: %s", result)
         except Exception as e:
             _LOGGER.error(f"Profile deletion failed: {e}")
             raise
@@ -179,14 +175,12 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Create a new brew schedule and refresh coordinator data."""
         if not self.api:
             raise RuntimeError("Fellow Aiden library not initialized")
-        _LOGGER.info("=== Creating Schedule ===")
-        _LOGGER.info(f"Schedule data: {schedule_data}")
+        _LOGGER.debug("Creating schedule with data: %s", schedule_data)
         try:
             result = await self.hass.async_add_executor_job(
                 self.api.create_schedule, schedule_data
             )
-            _LOGGER.info(f"Schedule creation result: {result}")
-            _LOGGER.info("=== Schedule Created Successfully ===")
+            _LOGGER.debug("Schedule creation result: %s", result)
         except Exception as e:
             _LOGGER.error(f"Schedule creation failed: {e}")
             raise
@@ -197,14 +191,12 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Delete a brew schedule and refresh coordinator data."""
         if not self.api:
             raise RuntimeError("Fellow Aiden library not initialized")
-        _LOGGER.info("=== Deleting Schedule ===")
-        _LOGGER.info(f"Schedule ID: {schedule_id}")
+        _LOGGER.debug("Deleting schedule ID: %s", schedule_id)
         try:
             result = await self.hass.async_add_executor_job(
                 self.api.delete_schedule_by_id, schedule_id
             )
-            _LOGGER.info(f"Schedule deletion result: {result}")
-            _LOGGER.info("=== Schedule Deleted Successfully ===")
+            _LOGGER.debug("Schedule deletion result: %s", result)
         except Exception as e:
             _LOGGER.error(f"Schedule deletion failed: {e}")
             raise
@@ -215,14 +207,12 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Enable or disable a brew schedule and refresh coordinator data."""
         if not self.api:
             raise RuntimeError("Fellow Aiden library not initialized")
-        _LOGGER.info("=== Toggling Schedule ===")
-        _LOGGER.info(f"Schedule ID: {schedule_id}, Enabled: {enabled}")
+        _LOGGER.debug("Toggling schedule ID: %s, enabled: %s", schedule_id, enabled)
         try:
             result = await self.hass.async_add_executor_job(
                 self.api.toggle_schedule, schedule_id, enabled
             )
-            _LOGGER.info(f"Schedule toggle result: {result}")
-            _LOGGER.info("=== Schedule Toggled Successfully ===")
+            _LOGGER.debug("Schedule toggle result: %s", result)
         except Exception as e:
             _LOGGER.error(f"Schedule toggle failed: {e}")
             raise
