@@ -649,7 +649,7 @@ class AidenCurrentProfileSensor(FellowAidenBaseEntity, SensorEntity):
             # Method 1: Check against the "ibSelectedProfileId" field, if set.
             device_config = data.get("device_config")
             if device_config:
-                selected_profile_id = device_config["ibSelectedProfileId"] or None
+                selected_profile_id = device_config.get("ibSelectedProfileId", None)
                 if selected_profile_id:
                     selected_profile = next(
                         (p for p in data["profiles"] if p.get("id") == selected_profile_id),

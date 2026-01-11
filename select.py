@@ -54,9 +54,9 @@ class FellowAidenProfilesSelect(CoordinatorEntity, SelectEntity):
         # Return the "ibSelectedProfileId" if it's present
         selected_profile_id = None
 
-        device_config = self.coordinator.data.get("device_config", {})
+        device_config = self.coordinator.data.get("device_config")
         if device_config:
-            selected_profile_id = device_config["ibSelectedProfileId"] or None
+            selected_profile_id = device_config.get("ibSelectedProfileId")
 
             if selected_profile_id:
                 selected_profile = next(
