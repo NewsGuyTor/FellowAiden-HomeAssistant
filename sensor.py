@@ -2,7 +2,7 @@ import logging
 from typing import Any
 from datetime import datetime
 
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import SensorEntity, SensorDeviceClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -95,6 +95,13 @@ async def async_setup_entry(
         AidenMostPopularProfileSensor(coordinator, entry),
         AidenCurrentProfileSensor(coordinator, entry),
     ])
+
+    entities.append(
+        AidenBrewingWaterVolumeSensor(
+            coordinator=coordinator,
+            entry=entry
+        )
+    )
 
     _LOGGER.debug(f"Adding {len(entities)} sensor entities")
     async_add_entities(entities, True)
@@ -736,26 +743,53 @@ class AidenCurrentProfileSensor(FellowAidenBaseEntity, SensorEntity):
                     else:
                         detection_method = "first_available"
                         confidence = "low"
-        
+
         attrs = {
             "total_profiles": total_profiles,
             "detection_method": detection_method,
             "confidence": confidence,
         }
-        
+
         # Add last used time if available
         if last_used_time:
             attrs["last_used_time"] = last_used_time
-        
+
         # Add last brew information if available
         last_brew_time = self.coordinator.history_manager.get_last_brew_time()
         if last_brew_time:
             attrs["last_brew_time"] = last_brew_time.isoformat()
-        
+
         # Add profile usage stats
         profile_stats = self.coordinator.history_manager.get_profile_usage_stats()
         if profile_stats:
             attrs["profile_usage_stats"] = profile_stats
             attrs["total_historical_brews"] = sum(profile_stats.values())
-        
+
         return attrs
+
+class AidenLastBrewVolumeSensor(FellowAidenBaseEntity, SensorEntity):
+    """
+    Shows the last brew volume in milliliters.
+    """
+
+    def __init__(
+        self,
+        coordinator: FellowAidenDataUpdateCoordinator,
+        entry: ConfigEntry,
+    ) -> None:
+        """Initialize the last brew volume sensor."""
+        super().__init__(coordinator)
+        self._entry_id = entry.entry_id
+        self._attr_name = "Aiden Last Brew Volume"
+        self._attr_unique_id = f"{entry.entry_id}-brewing_water_volume"
+        self._attr_native_unit_of_measurement = "mL"
+        self._attr_icon = "mdi:coffee-outline"
+        self._attr_device_class = SensorDeviceClass.VOLUME
+
+    @property
+    def native_value(self) -> int | None:
+        """Return the last brew volume."""
+
+        device_config = self.coordinator.data.get("device_config")
+        brewing_water_volume = device_config.get("brewingWaterVolumeMl")
+        return brewing_water_volume
