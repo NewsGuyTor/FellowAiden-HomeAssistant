@@ -642,9 +642,21 @@ class AidenCurrentProfileSensor(FellowAidenBaseEntity, SensorEntity):
         _LOGGER.debug("Getting current profile value")
         data = self.coordinator.data
         _LOGGER.debug(f"Data available: {data is not None}, profiles count: {len(data.get('profiles', [])) if data else 0}")
-        
-        # Method 1: Check for most recently used profile by lastUsedTime
+
         if data and "profiles" in data and data["profiles"]:
+            # Method 1: Check against the "ibSelectedProfileId" field, if set.
+            device_config = data.get("device_config")
+            if device_config:
+                selected_profile_id = device_config["ibSelectedProfileId"] or None
+                if selected_profile_id:
+                    selected_profile = next(
+                        (p for p in data["profiles"] if p.get("id") == selected_profile_id),
+                        None
+                    )
+                    if selected_profile:
+                        return selected_profile.get("title", "Selected Profile")
+
+            # Method 2: Check for most recently used profile by lastUsedTime
             profiles_with_last_used = []
             for profile in data["profiles"]:
                 last_used = profile.get("lastUsedTime")
@@ -655,35 +667,35 @@ class AidenCurrentProfileSensor(FellowAidenBaseEntity, SensorEntity):
                             profiles_with_last_used.append((profile, last_used_timestamp))
                     except (ValueError, TypeError):
                         continue
-            
+
             # Sort by lastUsedTime descending and return the most recent
             if profiles_with_last_used:
                 profiles_with_last_used.sort(key=lambda x: x[1], reverse=True)
                 most_recent_profile = profiles_with_last_used[0][0]
                 _LOGGER.debug(f"Found most recent profile: {most_recent_profile.get('title')} (lastUsedTime: {profiles_with_last_used[0][1]})")
                 return most_recent_profile.get("title", "Recent Profile")
-        
-        # Method 2: Check for default profile flag
+
+        # Method 3: Check for default profile flag
         if data and "profiles" in data and data["profiles"]:
             default_profile = next(
-                (p for p in data["profiles"] if p.get("isDefaultProfile")), 
+                (p for p in data["profiles"] if p.get("isDefaultProfile")),
                 None
             )
             if default_profile:
                 _LOGGER.debug(f"Using default profile: {default_profile.get('title')}")
                 return default_profile.get("title", "Default Profile")
-        
-        # Method 3: Use most popular profile from history
+
+        # Method 4: Use most popular profile from history
         most_popular = self.coordinator.history_manager.get_most_popular_profile()
         if most_popular:
             _LOGGER.debug(f"Using most popular from history: {most_popular}")
             return most_popular
-        
-        # Method 4: Fallback to first available profile
+
+        # Method 5: Fallback to first available profile
         if data and "profiles" in data and data["profiles"]:
             _LOGGER.debug("Using first available profile")
             return data["profiles"][0].get("title", "Profile 1")
-        
+
         return "No profiles available"
 
     @property
@@ -691,25 +703,38 @@ class AidenCurrentProfileSensor(FellowAidenBaseEntity, SensorEntity):
         """Return additional attributes."""
         data = self.coordinator.data
         total_profiles = len(data.get("profiles", [])) if data else 0
-        
+
         # Determine detection method (matches the logic in native_value)
         detection_method = "unknown"
         confidence = "low"
         last_used_time = None
-        
+
         if data and "profiles" in data and data["profiles"]:
-            # Check for most recently used profile first
+            # Method 1: Check against the "ibSelectedProfileId" field, if set.
+            if data and "ibSelectedProfileId" in data and data["ibSelectedProfileId"]:
+                selected_profile_id = data["ibSelectedProfileId"]
+                if selected_profile_id in data["profiles"]:
+                    selected_profile = next((p for p in data["profiles"] if p.get("id") == selected_profile_id), None)
+                    if selected_profile:
+                        last_used = selected_profile.get("title", "Selected Profile")
+                        detection_method = "Selected Profile Id"
+                        confidence = "very_high"
+
+            # Check for most recently used profile
             profiles_with_last_used = []
-            for profile in data["profiles"]:
-                last_used = profile.get("lastUsedTime")
-                if last_used and last_used != "0":
-                    try:
-                        last_used_timestamp = int(last_used)
-                        if last_used_timestamp > 0:
-                            profiles_with_last_used.append((profile, last_used_timestamp))
-                    except (ValueError, TypeError):
-                        continue
-            
+
+            # TODO clean this up later
+
+            # for profile in data["profiles"]:
+            #     last_used = profile.get("lastUsedTime")
+            #     if last_used and last_used != "0":
+            #         try:
+            #             last_used_timestamp = int(last_used)
+            #             if last_used_timestamp > 0:
+            #                 profiles_with_last_used.append((profile, last_used_timestamp))
+            #         except (ValueError, TypeError):
+            #             continue
+
             if profiles_with_last_used:
                 profiles_with_last_used.sort(key=lambda x: x[1], reverse=True)
                 most_recent_timestamp = profiles_with_last_used[0][1]
