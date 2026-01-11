@@ -20,6 +20,7 @@ STANDARD_SENSORS = [
     ("totalBrewingCycles", "Total Brews", None, "mdi:counter"),
     # Convert totalWaterVolumeL (in ml) to liters for display
     ("totalWaterVolumeL", "Total Water Volume", "L", "mdi:cup-water"),
+    ("brewingWaterVolumeMl", "Last Brew Volume", "mL", "mdi:coffee-outline"),
 ]
 
 # Definitions for brew time-related sensors

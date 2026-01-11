@@ -84,9 +84,9 @@ Choose one of the following methods to install the **Fellow Aiden** integration:
 1. **Download or Clone the Repository**
    ```bash
    cd /config/custom_components
-   git clone https://github.com/NewsGuyTor/FellowAiden-HomeAssistant.git fellow_aiden
+   git clone https://github.com/NewsGuyTor/FellowAiden-HomeAssistant.git fellow
    ```
-   - Ensure the folder is named exactly `fellow_aiden`.
+   - Ensure the folder is named exactly `fellow`.
 
 2. **Restart Home Assistant**
    - This allows Home Assistant to detect the new integration.
