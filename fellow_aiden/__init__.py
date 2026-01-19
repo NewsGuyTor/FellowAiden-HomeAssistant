@@ -46,13 +46,6 @@ class FellowAiden:
         'duration',
         'lastGBQuantity'
     ]
-    SESSION = requests.Session()
-    retries = Retry(
-        total=3,
-        status_forcelist=[408, 500, 501, 502, 503, 504],
-    )
-    SESSION.mount('https://', HTTPAdapter(max_retries=retries))
-    
 
     def __init__(self, email, password):
         """Start of self."""
@@ -64,6 +57,15 @@ class FellowAiden:
         self._password = password
         self._device_config = None
         self._brewer_id = None
+
+        # Create instance-level session so each FellowAiden instance maintains its own auth state
+        self._session = requests.Session()
+        retries = Retry(
+            total=3,
+            status_forcelist=[408, 500, 501, 502, 503, 504],
+        )
+        self._session.mount('https://', HTTPAdapter(max_retries=retries))
+
         self.__auth()
         
     def _logger(self):
@@ -76,9 +78,9 @@ class FellowAiden:
     def __auth(self):
         self._log.debug("Authenticating user")
         auth = {"email": self._email, "password": self._password}
-        self.SESSION.headers.update(self.HEADERS)
+        self._session.headers.update(self.HEADERS)
         login_url = self.BASE_URL + self.API_AUTH
-        response = self.SESSION.post(login_url, json=auth, headers=self.HEADERS)
+        response = self._session.post(login_url, json=auth, headers=self.HEADERS)
         parsed = json.loads(response.content)
         self._log.debug(parsed)
         if 'accessToken' not in parsed:
@@ -86,7 +88,7 @@ class FellowAiden:
         self._log.debug("Authentication successful")
         self._token = parsed['accessToken']
         self._refresh = parsed['refreshToken']
-        self.SESSION.headers.update({'Authorization': 'Bearer ' + self._token})
+        self._session.headers.update({'Authorization': 'Bearer ' + self._token})
         self._auth = True
         # Makes sense to populate the device as it's used in subsequent calls
         self.__device()
@@ -94,14 +96,14 @@ class FellowAiden:
     def __device(self):
         self._log.debug("Fetching device for account")
         device_url = self.BASE_URL + self.API_DEVICES
-        response = self.SESSION.get(device_url, params={'dataType': 'real'})
+        response = self._session.get(device_url, params={'dataType': 'real'})
         
         # Check for unauthorized response and try to reauthenticate
         if response.status_code == 401:
             self._log.warning("Unauthorized response received. Attempting to reauthenticate...")
             self.__auth()
             # Retry the request with the new token
-            response = self.SESSION.get(device_url, params={'dataType': 'real'})
+            response = self._session.get(device_url, params={'dataType': 'real'})
             
         parsed = json.loads(response.content)
         self._log.debug(parsed)
@@ -120,13 +122,13 @@ class FellowAiden:
         if self._profiles is None:
             self._log.debug("Fetching profiles")
             profiles_url = self.BASE_URL + self.API_PROFILES.format(id=self._brewer_id)
-            response = self.SESSION.get(profiles_url)
+            response = self._session.get(profiles_url)
             # Check for unauthorized response and try to reauthenticate
             if response.status_code == 401:
                 self._log.warning("Unauthorized response received. Attempting to reauthenticate...")
                 self.__auth()
                 # Retry the request with the new token
-                response = self.SESSION.get(profiles_url)
+                response = self._session.get(profiles_url)
 
             parsed = json.loads(response.content)
             self._log.debug(parsed)
@@ -139,13 +141,13 @@ class FellowAiden:
         if self._schedules is None:
             self._log.debug("Fetching schedules")
             schedules_url = self.BASE_URL + self.API_SCHEDULES.format(id=self._brewer_id)
-            response = self.SESSION.get(schedules_url)
+            response = self._session.get(schedules_url)
             # Check for unauthorized response and try to reauthenticate
             if response.status_code == 401:
                 self._log.warning("Unauthorized response received. Attempting to reauthenticate...")
                 self.__auth()
                 # Retry the request with the new token
-                response = self.SESSION.get(schedules_url)
+                response = self._session.get(schedules_url)
 
             parsed = json.loads(response.content)
             self._log.debug(parsed)
@@ -186,14 +188,14 @@ class FellowAiden:
         brew_id = match.group(1)
         self._log.debug("Brew ID: %s" % brew_id)
         shared_url = self.BASE_URL + self.API_SHARED_PROFILE.format(bid=brew_id)
-        response = self.SESSION.get(shared_url)
+        response = self._session.get(shared_url)
         
         # Check for unauthorized response and try to reauthenticate
         if response.status_code == 401:
             self._log.warning("Unauthorized response received. Attempting to reauthenticate...")
             self.__auth()
             # Retry the request with the new token
-            response = self.SESSION.get(shared_url)
+            response = self._session.get(shared_url)
             
         if response.status_code != 200:
             raise ValueError(f"Failed to fetch profile (ID: {brew_id})")
@@ -246,18 +248,17 @@ class FellowAiden:
         
         if 'id' in data.keys():
             raise Exception("Candidate profiles must be free of server derived fields.")
-            return False
         
         self._log.debug("Brew profile passed checks")
         profile_url = self.BASE_URL + self.API_PROFILES.format(id=self._brewer_id)
-        response = self.SESSION.post(profile_url, json=data)
+        response = self._session.post(profile_url, json=data)
         
         # Check for unauthorized response and try to reauthenticate
         if response.status_code == 401:
             self._log.warning("Unauthorized response received. Attempting to reauthenticate...")
             self.__auth()
             # Retry the request with the new token
-            response = self.SESSION.post(profile_url, json=data)
+            response = self._session.post(profile_url, json=data)
             
         parsed = json.loads(response.content)
         if 'id' not in parsed:
@@ -290,14 +291,14 @@ class FellowAiden:
         # Use PATCH to update the profile
         update_url = self.BASE_URL + self.API_PROFILE.format(id=self._brewer_id, pid=profile_id)
         self._log.debug(f"Update URL: {update_url}")
-        response = self.SESSION.patch(update_url, json=data)
+        response = self._session.patch(update_url, json=data)
         
         # Check for unauthorized response and try to reauthenticate
         if response.status_code == 401:
             self._log.warning("Unauthorized response received. Attempting to reauthenticate...")
             self.__auth()
             # Retry the request with the new token
-            response = self.SESSION.patch(update_url, json=data)
+            response = self._session.patch(update_url, json=data)
         
         # Check response
         if response.status_code >= 400:
@@ -318,18 +319,17 @@ class FellowAiden:
         
         if 'id' in data.keys():
             raise Exception("Candidate schedules must be free of server derived fields.")
-            return False
     
         self._log.debug("Brew schedule passed checks")
         schedule_url = self.BASE_URL + self.API_SCHEDULES.format(id=self._brewer_id)
-        response = self.SESSION.post(schedule_url, json=data)
+        response = self._session.post(schedule_url, json=data)
         
         # Check for unauthorized response and try to reauthenticate
         if response.status_code == 401:
             self._log.warning("Unauthorized response received. Attempting to reauthenticate...")
             self.__auth()
             # Retry the request with the new token
-            response = self.SESSION.post(schedule_url, json=data)
+            response = self._session.post(schedule_url, json=data)
             
         parsed = json.loads(response.content)
         if 'id' not in parsed:
@@ -352,14 +352,14 @@ class FellowAiden:
         self._log.debug("Generating share link")
         share_url = self.BASE_URL + self.API_PROFILE_SHARE.format(id=self._brewer_id, pid=pid)
         self._log.debug("Share URL: %s" % share_url)
-        response = self.SESSION.post(share_url)
+        response = self._session.post(share_url)
         
         # Check for unauthorized response and try to reauthenticate
         if response.status_code == 401:
             self._log.warning("Unauthorized response received. Attempting to reauthenticate...")
             self.__auth()
             # Retry the request with the new token
-            response = self.SESSION.post(share_url)
+            response = self._session.post(share_url)
             
         parsed = json.loads(response.content)
         if 'link' not in parsed:
@@ -375,14 +375,14 @@ class FellowAiden:
         #     raise Exception(message)
         delete_url = self.BASE_URL + self.API_PROFILE.format(id=self._brewer_id, pid=pid)
         self._log.debug(delete_url)
-        response = self.SESSION.delete(delete_url)
+        response = self._session.delete(delete_url)
         
         # Check for unauthorized response and try to reauthenticate
         if response.status_code == 401:
             self._log.warning("Unauthorized response received. Attempting to reauthenticate...")
             self.__auth()
             # Retry the request with the new token
-            response = self.SESSION.delete(delete_url)
+            response = self._session.delete(delete_url)
             
         self._log.debug("Profile deleted")
         return True
@@ -394,7 +394,15 @@ class FellowAiden:
             raise Exception(message)
         delete_url = self.BASE_URL + self.API_SCHEDULE.format(id=self._brewer_id, sid=sid)
         self._log.debug(delete_url)
-        response = self.SESSION.delete(delete_url)
+        response = self._session.delete(delete_url)
+
+        # Check for unauthorized response and try to reauthenticate (consistent with delete_profile_by_id)
+        if response.status_code == 401:
+            self._log.warning("Unauthorized response received. Attempting to reauthenticate...")
+            self.__auth()
+            # Retry the request with the new token
+            response = self._session.delete(delete_url)
+
         self._log.debug("Schedule deleted")
         return True
     
@@ -402,14 +410,14 @@ class FellowAiden:
         patch_url = self.BASE_URL + self.API_DEVICE.format(id=self._brewer_id)
         self._log.debug("Patch URL: %s" % patch_url)
         data = json.dumps({setting: value})
-        response = self.SESSION.patch(patch_url, data=data)
+        response = self._session.patch(patch_url, data=data)
         
         # Check for unauthorized response and try to reauthenticate
         if response.status_code == 401:
             self._log.warning("Unauthorized response received. Attempting to reauthenticate...")
             self.__auth()
             # Retry the request with the new token
-            response = self.SESSION.patch(patch_url, data=data)
+            response = self._session.patch(patch_url, data=data)
             
         return response.content
     
@@ -420,14 +428,14 @@ class FellowAiden:
         patch_url = self.BASE_URL + self.API_SCHEDULE.format(id=self._brewer_id, sid=sid)
         self._log.debug("Patch URL: %s" % patch_url)
         data = json.dumps({'enabled': enabled})
-        response = self.SESSION.patch(patch_url, data=data)
+        response = self._session.patch(patch_url, data=data)
         
         # Check for unauthorized response and try to reauthenticate
         if response.status_code == 401:
             self._log.warning("Unauthorized response received. Attempting to reauthenticate...")
             self.__auth()
             # Retry the request with the new token
-            response = self.SESSION.patch(patch_url, data=data)
+            response = self._session.patch(patch_url, data=data)
             
         return response.content
         

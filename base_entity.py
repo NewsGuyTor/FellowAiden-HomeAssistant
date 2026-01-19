@@ -30,9 +30,9 @@ class FellowAidenBaseEntity(CoordinatorEntity):
             connections.add((dr.CONNECTION_NETWORK_MAC, wifi_mac))
         if bt_mac:
             connections.add((dr.CONNECTION_BLUETOOTH, bt_mac))
-        # Add WiFi SSID to device info (custom usage, but it meets your request)
+        # Add WiFi SSID to device info (namespaced to avoid collisions)
         if wifi_ssid:
-            connections.add(("wifi_ssid", wifi_ssid))
+            connections.add((f"{DOMAIN}:wifi_ssid", wifi_ssid))
 
         return {
             "identifiers": {(DOMAIN, brewer_id)},

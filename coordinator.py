@@ -71,10 +71,10 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return data
         except UpdateFailed:
             # If UpdateFailed was already raised, propagate it
-            _LOGGER.error("UpdateFailed exception during data update")
+            _LOGGER.exception("UpdateFailed exception during data update")
             raise
         except Exception as err:
-            _LOGGER.error(f"Unexpected error during data update: {err}")
+            _LOGGER.exception("Unexpected error during data update: %s", err)
             raise UpdateFailed(f"Unexpected error: {err}") from err
 
     def _fetch(self, verbose_logging: bool = False) -> dict[str, Any]:
@@ -84,6 +84,7 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         Args:
             verbose_logging: If True, log full API responses. If False, only log basic info.
 
+        TODO: Remove private __device/__auth calls when library adds public refresh API.
         HACK:
         We call the private method __device() to re-fetch the device data
         from the cloud. This is not ideal, but works until the library
@@ -93,15 +94,25 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         try:
             _LOGGER.debug("Attempting to fetch device data.")
             self.api._FellowAiden__device()  # <-- HACK: Accessing private method
-        except Exception as e:
-            _LOGGER.error(f"Error fetching device data: {e}. Attempting to re-authenticate.")
+        except (ConnectionError, TimeoutError, OSError) as e:
+            _LOGGER.error("Error fetching device data: %s. Attempting to re-authenticate.", e)
             try:
                 _LOGGER.debug("Re-authenticating user.")
                 self.api._FellowAiden__auth()  # <-- HACK: Accessing private method
                 _LOGGER.debug("Re-authentication successful. Re-fetching device data.")
                 self.api._FellowAiden__device()  # <-- HACK: Accessing private method
             except Exception as auth_e:
-                _LOGGER.error(f"Re-authentication failed: {auth_e}")
+                _LOGGER.error("Re-authentication failed: %s", auth_e)
+                raise UpdateFailed(f"Error updating data: {auth_e}") from auth_e
+        except Exception as e:
+            _LOGGER.error("Error fetching device data: %s. Attempting to re-authenticate.", e)
+            try:
+                _LOGGER.debug("Re-authenticating user.")
+                self.api._FellowAiden__auth()  # <-- HACK: Accessing private method
+                _LOGGER.debug("Re-authentication successful. Re-fetching device data.")
+                self.api._FellowAiden__device()  # <-- HACK: Accessing private method
+            except Exception as auth_e:
+                _LOGGER.error("Re-authentication failed: %s", auth_e)
                 raise UpdateFailed(f"Error updating data: {auth_e}") from auth_e
 
         brewer_name = self.api.get_display_name()
