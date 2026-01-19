@@ -21,7 +21,7 @@ async def async_setup_entry(
 ) -> None:
     """Set up select entity listing all brew profiles."""
     coordinator: FellowAidenDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([FellowAidenProfilesSelect(coordinator, entry)], True)
+    async_add_entities([FellowAidenProfilesSelect(coordinator, entry)], update_before_add=True)
 
 
 class FellowAidenProfilesSelect(CoordinatorEntity, SelectEntity):
@@ -50,17 +50,18 @@ class FellowAidenProfilesSelect(CoordinatorEntity, SelectEntity):
         data = self.coordinator.data
         if not data or "profiles" not in data or not data["profiles"]:
             return None
-        
+
         # If the device data has 'isDefaultProfile', pick that
         default_profile = next(
-            (p for p in data["profiles"] if p.get("isDefaultProfile")), 
+            (p for p in data["profiles"] if p.get("isDefaultProfile")),
             None
         )
         if default_profile:
-            return default_profile["title"]
+            return default_profile.get("title", "Default Profile")
 
         # Otherwise, just pick the first one
-        return data["profiles"][0]["title"]
+        first_profile = data["profiles"][0]
+        return first_profile.get("title", "Profile 1")
 
     async def async_select_option(self, option: str) -> None:
         """

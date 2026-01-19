@@ -29,9 +29,14 @@ class FellowAidenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 await self.hass.async_add_executor_job(FellowAiden, email, password)
             except Exception as e:
-                _LOGGER.error("Error authenticating: %s", e)
+                # Log with traceback for unexpected errors
+                _LOGGER.exception("Error authenticating: %s", e)
                 errors["base"] = "auth"
             else:
+                # Set unique_id based on email to prevent duplicate entries
+                await self.async_set_unique_id(email.lower())
+                self._abort_if_unique_id_configured()
+
                 # Success, create an entry
                 return self.async_create_entry(
                     title=f"Fellow Aiden ({email})",

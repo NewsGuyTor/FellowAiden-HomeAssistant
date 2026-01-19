@@ -82,11 +82,15 @@ class FellowAidenBinarySensor(FellowAidenBaseEntity, BinarySensorEntity):
           - But the data returns True => physically closed.
           => We invert if key == 'lidClosed'.
         """
-        device_config = self.coordinator.data.get("device_config", {})
+        data = self.coordinator.data or {}
+        device_config = data.get("device_config", {})
         raw_value = device_config.get(self._key)
 
         if self._key == "lidClosed":
             # Invert: if lidClosed=True => physically closed => HA expects 'off'
+            # Treat None as False (lid open) for safety
+            if raw_value is None:
+                return None
             return not raw_value
 
         return raw_value
@@ -113,7 +117,8 @@ class AidenBasketSensor(FellowAidenBaseEntity, SensorEntity):
           - "Batch Brew"
           - "Missing"
         """
-        device_config = self.coordinator.data.get("device_config", {})
+        data = self.coordinator.data or {}
+        device_config = data.get("device_config", {})
         single_basket = device_config.get("singleBrewBasketPresent", False)
         batch_basket = device_config.get("batchBrewBasketPresent", False)
 

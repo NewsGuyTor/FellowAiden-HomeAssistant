@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import time, datetime
+from datetime import time
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceResponse, SupportsResponse
@@ -64,21 +64,48 @@ async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
 
 def async_register_services(hass: HomeAssistant) -> None:
-    """Register services for creating or deleting profiles."""
+    """Register services for creating or deleting profiles.
 
-    def get_coordinator() -> FellowAidenDataUpdateCoordinator:
-        """Get the first available coordinator from hass data."""
+    Note: Currently uses the first available coordinator for multi-device setups.
+    TODO: Add entry_id/entity_id parameter support to target specific devices.
+    """
+
+    def get_coordinator(entry_id: str | None = None) -> FellowAidenDataUpdateCoordinator:
+        """Get a coordinator from hass data.
+
+        Args:
+            entry_id: Optional config entry ID. If None, returns the first available.
+
+        Returns:
+            The coordinator for the specified or first available entry.
+
+        Raises:
+            ValueError: If no integrations are configured or entry_id is invalid.
+        """
         domain_data = hass.data.get(DOMAIN, {})
         if not domain_data:
             raise ValueError("No Fellow Aiden integrations configured")
 
-        # Get the first available coordinator
-        entry_id = next(iter(domain_data.keys()))
-        return domain_data[entry_id]
+        if entry_id is not None:
+            if entry_id not in domain_data:
+                available = list(domain_data.keys())
+                raise ValueError(
+                    f"Entry ID '{entry_id}' not found. Available entries: {available}"
+                )
+            return domain_data[entry_id]
 
-    def get_profile_id_by_name(profile_name: str) -> str | None:
-        """Get profile ID by profile name."""
-        coordinator = get_coordinator()
+        # Get the first available coordinator (single-device fallback)
+        first_entry_id = next(iter(domain_data.keys()))
+        return domain_data[first_entry_id]
+
+    def get_profile_id_by_name(profile_name: str, entry_id: str | None = None) -> str | None:
+        """Get profile ID by profile name.
+
+        Args:
+            profile_name: The name of the profile to find.
+            entry_id: Optional config entry ID to search within.
+        """
+        coordinator = get_coordinator(entry_id)
         data = coordinator.data
         if not data or "profiles" not in data:
             return None
@@ -88,9 +115,13 @@ def async_register_services(hass: HomeAssistant) -> None:
                 return profile.get("id")
         return None
 
-    def get_available_profile_names() -> list[str]:
-        """Get list of available profile names."""
-        coordinator = get_coordinator()
+    def get_available_profile_names(entry_id: str | None = None) -> list[str]:
+        """Get list of available profile names.
+
+        Args:
+            entry_id: Optional config entry ID to get profiles from.
+        """
+        coordinator = get_coordinator(entry_id)
         data = coordinator.data
         if not data or "profiles" not in data:
             return []
@@ -122,7 +153,7 @@ def async_register_services(hass: HomeAssistant) -> None:
             _LOGGER.info("Profile created successfully")
         except ValueError as e:
             _LOGGER.error("Validation failed when creating profile: %s", e)
-            raise ServiceValidationError(str(e))
+            raise ServiceValidationError(str(e)) from e
         except Exception as e:
             _LOGGER.error("Failed to create profile: %s", e)
             raise
@@ -169,8 +200,8 @@ def async_register_services(hass: HomeAssistant) -> None:
             # Parse the string into a time object
             try:
                 time_obj = time.fromisoformat(time_str)
-            except ValueError:
-                raise ServiceValidationError(f"Invalid time format: '{time_str}'. Please use HH:MM:SS format.")
+            except ValueError as e:
+                raise ServiceValidationError(f"Invalid time format: '{time_str}'. Please use HH:MM:SS format.") from e
 
             seconds_from_start_of_day = (
                 time_obj.hour * 3600 + time_obj.minute * 60 + time_obj.second
@@ -197,7 +228,7 @@ def async_register_services(hass: HomeAssistant) -> None:
             _LOGGER.info("Schedule created successfully")
         except ValueError as e:
             _LOGGER.error("Validation failed when creating schedule: %s", e)
-            raise ServiceValidationError(str(e))
+            raise ServiceValidationError(str(e)) from e
         except Exception as e:
             _LOGGER.error("Failed to create schedule: %s", e)
             raise
@@ -340,11 +371,16 @@ def async_register_services(hass: HomeAssistant) -> None:
             _LOGGER.info("=== Manual Data Refresh Requested ===")
             coordinator = get_coordinator()
 
-            # Force a refresh with verbose logging and get the dictionary response
-            data = await hass.async_add_executor_job(coordinator._fetch, True)
+            # Enable verbose logging for the next refresh
+            coordinator._next_refresh_verbose = True
 
+            # Use the public refresh API to trigger entity updates and state listeners
+            await coordinator.async_request_refresh()
+
+            # Return the refreshed data from the coordinator
+            data = coordinator.data
             _LOGGER.info("Manual refresh completed - returning full API response.")
-            return data
+            return data if data else {"error": "No data available after refresh"}
         except Exception as e:
             _LOGGER.error("Failed to refresh and log data: %s", e)
             return {"error": f"Failed to refresh and log data: {e}"}
