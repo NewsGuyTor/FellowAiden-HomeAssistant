@@ -1,5 +1,12 @@
 # Fellow Aiden Integration for Home Assistant
 
+<p align="center">
+  <a href="https://github.com/NewsGuyTor/FellowAiden-HomeAssistant/releases"><img src="https://img.shields.io/github/v/release/NewsGuyTor/FellowAiden-HomeAssistant" alt="GitHub Release"></a>
+  <a href="https://github.com/NewsGuyTor/FellowAiden-HomeAssistant/actions/workflows/validate.yml"><img src="https://img.shields.io/github/actions/workflow/status/NewsGuyTor/FellowAiden-HomeAssistant/validate.yml?label=validation" alt="Validation"></a>
+  <a href="https://github.com/hacs/integration"><img src="https://img.shields.io/badge/HACS-Custom-blue.svg" alt="HACS"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/NewsGuyTor/FellowAiden-HomeAssistant" alt="License"></a>
+</p>
+
 <img src="device.png" alt="Device Image" align="right" width="200"/>
 
 > *“A good brew is like a good friend: reliable, comforting, and occasionally in need of a little maintenance.”*  
