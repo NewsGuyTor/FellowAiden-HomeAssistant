@@ -8,7 +8,6 @@ This is a custom integration that brings your coffee brewer into the Home Assist
 
 *Special thanks to [Brandon Dixon (9b)](https://github.com/9b) for creating the [fellow-aiden](https://github.com/9b/fellow-aiden) Python library that laid the groundwork for this integration!*
 
-##    
 <sub>You might also like my [Brew.link to Aiden](https://greasyfork.org/en/scripts/524547-brew-link-to-aiden) userscript to send Brew.link profiles directly to your Fellow Aiden.</sub>
 
 ## Table of Contents
@@ -27,7 +26,7 @@ This is a custom integration that brings your coffee brewer into the Home Assist
 - **Real-Time Sensors:**
   - **Sensors** for water usage, number of brews, average water per brew and more—because data is beautiful.
   - **Analytics:** Daily/weekly/monthly water usage tracking, brew patterns, and timing insights.
-  - **Binary sensors** for brewing, lid status, missing water, baskets inserted, etc.  
+  - **Binary sensors** for brewing, lid status, missing water, baskets inserted, etc.
 - **Device Info:** Displays firmware version, hardware elevation (for you mountaintop dwellers), Wi-Fi and Bluetooth addresses, plus a witty sense of connectedness.
 - **Brew Management:** 
   - Create, list, delete, and manage brew profiles from Home Assistant
@@ -38,6 +37,7 @@ This is a custom integration that brings your coffee brewer into the Home Assist
 - **Water Usage Tracking:** Historical tracking with reset capabilities and period-specific sensors
 
 ## Screenshot
+
 <p align="center">
 <img width="720" alt="Image" src="https://github.com/user-attachments/assets/6cf8a133-dc34-4ae6-a1e7-845c8d150d25" />
 </p>
@@ -61,9 +61,11 @@ Choose one of the following methods to install the **Fellow Aiden** integration:
    - Navigate to the **Integrations** tab.
    - Click the **three-dot menu** (⋮) and select **"Add Repository"**.
    - Enter the repository URL:
-     ```
+
+     ```text
      https://github.com/NewsGuyTor/FellowAiden-HomeAssistant/
      ```
+
    - Choose **"Integration"** as the category and click **"Add"**.
 
 2. **Install the Integration**
@@ -115,21 +117,25 @@ Choose one of the following methods to install the **Fellow Aiden** integration:
 ## Services
 
 ### Brew Profile Management
+
 - **`fellow.create_profile`**: Create new brew profiles with detailed parameters (ratio, bloom, pulses, etc.)
 - **`fellow.delete_profile`**: Delete profiles by ID
 - **`fellow.list_profiles`**: List all available profiles with their names and IDs
 - **`fellow.get_profile_details`**: Get detailed information about a specific profile
 
 ### Schedule Management
+
 - **`fellow.create_schedule`**: Create brewing schedules with day/time configurations
 - **`fellow.delete_schedule`**: Delete schedules by ID
 - **`fellow.toggle_schedule`**: Enable or disable existing schedules
 - **`fellow.list_schedules`**: List all current schedules with full details
 
 ### Brewing Operations
-- _No direct start brew service (use device controls or schedules)._
+
+- *No direct start brew service (use device controls or schedules).*
 
 ### Analytics & Debugging
+
 - **`fellow.reset_water_tracking`**: Reset water usage tracking baseline
 - **`fellow.debug_water_usage`**: Show detailed water usage history
 - **`fellow.refresh_and_log_data`**: Manually refresh and log complete API response

@@ -61,7 +61,7 @@ class BrewHistoryManager:
                 "profile_usage": self._profile_usage,
                 "last_total_brews": self._last_total_brews,
                 "last_total_water": self._last_total_water,
-                "last_updated": datetime.now().isoformat()
+                "last_updated": dt_util.now().isoformat()
             }
             await self._store.async_save(data)
             _LOGGER.debug("Saved brew history")
@@ -78,8 +78,8 @@ class BrewHistoryManager:
         current_total_water = device_config.get("totalWaterVolumeL", 0)
         brew_start_time = device_config.get("brewStartTime")
         brew_end_time = device_config.get("brewEndTime")
-        
-        now = datetime.now()
+
+        now = dt_util.now()
         data_changed = False
         
         # Initialize baselines if this is the first time we're tracking
@@ -111,8 +111,10 @@ class BrewHistoryManager:
                         start_ts = int(brew_start_time)
                         end_ts = int(brew_end_time)
                         if start_ts > 0 and end_ts > 0 and start_ts < end_ts:
-                            brew_record["start_time"] = datetime.fromtimestamp(start_ts).isoformat()
-                            brew_record["end_time"] = datetime.fromtimestamp(end_ts).isoformat()
+                            start_dt = dt_util.as_local(dt_util.utc_from_timestamp(start_ts))
+                            end_dt = dt_util.as_local(dt_util.utc_from_timestamp(end_ts))
+                            brew_record["start_time"] = start_dt.isoformat()
+                            brew_record["end_time"] = end_dt.isoformat()
                             brew_record["duration_seconds"] = end_ts - start_ts
                     except (ValueError, TypeError):
                         pass
@@ -163,23 +165,36 @@ class BrewHistoryManager:
 
     def _clean_old_records(self, cutoff_date: datetime) -> None:
         """Remove records older than cutoff date."""
-        cutoff_iso = cutoff_date.isoformat()
-        
         original_brew_count = len(self._brew_history)
         original_water_count = len(self._water_usage_history)
-        
+
+        def is_record_recent(record: dict) -> bool:
+            """Check if a record is more recent than cutoff_date."""
+            timestamp_str = record.get("timestamp", "")
+            if not timestamp_str:
+                return False
+            try:
+                record_dt = datetime.fromisoformat(timestamp_str)
+                # Ensure timezone awareness for comparison
+                if record_dt.tzinfo is None:
+                    record_dt = dt_util.as_local(record_dt)
+                return record_dt > cutoff_date
+            except (ValueError, TypeError):
+                _LOGGER.debug("Failed to parse timestamp: %s", timestamp_str)
+                return False
+
         self._brew_history = [
-            record for record in self._brew_history 
-            if record.get("timestamp", "") > cutoff_iso
+            record for record in self._brew_history
+            if is_record_recent(record)
         ]
-        
+
         self._water_usage_history = [
-            record for record in self._water_usage_history 
-            if record.get("timestamp", "") > cutoff_iso
+            record for record in self._water_usage_history
+            if is_record_recent(record)
         ]
-        
+
         if len(self._brew_history) < original_brew_count or len(self._water_usage_history) < original_water_count:
-            _LOGGER.debug("Cleaned old records: %d->%d brews, %d->%d water", 
+            _LOGGER.debug("Cleaned old records: %d->%d brews, %d->%d water",
                          original_brew_count, len(self._brew_history),
                          original_water_count, len(self._water_usage_history))
 
@@ -218,23 +233,30 @@ class BrewHistoryManager:
     def get_water_usage_for_period(self, days: int) -> float:
         """Get total water usage for the specified number of days."""
         if not self._water_usage_history:
-            _LOGGER.debug(f"No water usage history available for {days}-day period")
+            _LOGGER.debug("No water usage history available for %d-day period", days)
             return 0.0
-        
-        cutoff_date = datetime.now() - timedelta(days=days)
-        cutoff_iso = cutoff_date.isoformat()
-        
+
+        cutoff_date = dt_util.now() - timedelta(days=days)
+
         total_water = 0.0
         matching_records = 0
         for record in self._water_usage_history:
-            if record.get("timestamp", "") > cutoff_iso:
-                water_used = record.get("water_used_ml", 0)
-                total_water += water_used
-                matching_records += 1
-                _LOGGER.debug(f"Found water usage record: {water_used}ml on {record.get('timestamp')}")
-        
+            timestamp_str = record.get("timestamp", "")
+            if timestamp_str:
+                try:
+                    record_dt = datetime.fromisoformat(timestamp_str)
+                    if record_dt.tzinfo is None:
+                        record_dt = dt_util.as_local(record_dt)
+                    if record_dt > cutoff_date:
+                        water_used = record.get("water_used_ml", 0)
+                        total_water += water_used
+                        matching_records += 1
+                        _LOGGER.debug("Found water usage record: %dml on %s", water_used, timestamp_str)
+                except (ValueError, TypeError):
+                    continue
+
         total_liters = round(total_water / 1000.0, 2)
-        _LOGGER.debug(f"Water usage for {days}-day period: {matching_records} records, {total_water}ml ({total_liters}L)")
+        _LOGGER.debug("Water usage for %d-day period: %d records, %dml (%sL)", days, matching_records, total_water, total_liters)
         return total_liters
 
     def get_average_brew_duration(self) -> float | None:
@@ -263,20 +285,35 @@ class BrewHistoryManager:
     def get_profile_usage_stats(self) -> dict[str, int]:
         """Get profile usage statistics."""
         return self._profile_usage.copy()
-        
+
+    def get_brew_history_count(self) -> int:
+        """Get the total number of brew history records."""
+        return len(self._brew_history)
+
+    def get_water_usage_count(self) -> int:
+        """Get the total number of water usage history records."""
+        return len(self._water_usage_history)
+
     def get_brew_count_for_period(self, days: int) -> int:
         """Get number of brews in the specified period."""
         if not self._brew_history:
             return 0
-        
-        cutoff_date = datetime.now() - timedelta(days=days)
-        cutoff_iso = cutoff_date.isoformat()
-        
+
+        cutoff_date = dt_util.now() - timedelta(days=days)
+
         count = 0
         for record in self._brew_history:
-            if record.get("timestamp", "") > cutoff_iso:
-                count += 1
-        
+            timestamp_str = record.get("timestamp", "")
+            if timestamp_str:
+                try:
+                    record_dt = datetime.fromisoformat(timestamp_str)
+                    if record_dt.tzinfo is None:
+                        record_dt = dt_util.as_local(record_dt)
+                    if record_dt > cutoff_date:
+                        count += 1
+                except (ValueError, TypeError):
+                    continue
+
         return count
 
     def get_last_brew_time(self) -> datetime | None:

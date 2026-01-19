@@ -102,10 +102,10 @@ create_profile:
           step: 1
           mode: box
     ssPulseTemperatures:
-      name: "Single Serve Pulse Temperatures"
-      description: "A list of temperatures for each Single Serve pulse (e.g. `[96, 97, 98]`)."
+      name: "Single Serve Pulse Temperatures (°C)"
+      description: "Temperatures for each Single Serve pulse. Accepts comma-separated integers or JSON array (e.g., 96,97,98 or [96,97,98]). Values in °C (50–99)."
       required: true
-      example: "[96,97,98]"
+      example: "96,97,98"
       selector:
         text:
     batchPulsesEnabled:
@@ -138,8 +138,8 @@ create_profile:
           step: 1
           mode: box
     batchPulseTemperatures:
-      name: "Batch Pulse Temperatures"
-      description: "A list of temperatures for each batch pulse (e.g. `[96, 97]`)."
+      name: "Batch Pulse Temperatures (°C)"
+      description: "A list of temperatures for each batch pulse (e.g. `[96, 97]`). Values in °C (50–99)."
       required: true
       example: "[96,97]"
       selector:
@@ -231,14 +231,14 @@ create_schedule:
           mode: box
     profileName:
       name: "Profile Name"
-      description: "Name of the brew profile to use. Find names in the 'Fellow Aiden Profiles' dropdown."
-      required: true
+      description: "Name of the brew profile to use. Either profileName or profileId must be provided (profileName takes precedence). Find names in the 'Fellow Aiden Profiles' dropdown."
+      required: false
       example: "My Morning Coffee"
       selector:
         text:
     profileId:
       name: "Profile ID (Alternative)"
-      description: "ID of the brew profile to use instead of its name (e.g. 'p1')."
+      description: "ID of the brew profile to use (e.g. 'p1'). Either profileName or profileId must be provided (profileName takes precedence)."
       required: false
       example: "p1"
       selector:
@@ -279,7 +279,6 @@ toggle_schedule:
       default: true
       selector:
         boolean:
-
 
 list_profiles:
   name: "List All Profiles"

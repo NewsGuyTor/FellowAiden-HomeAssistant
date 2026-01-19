@@ -1,6 +1,5 @@
 """Model to validate the coffee schedule data"""
-from pydantic import BaseModel, field_validator, ValidationError
-from typing import List
+from pydantic import BaseModel, field_validator
 import re
 from ..const import MIN_WATER_AMOUNT_ML, MAX_WATER_AMOUNT_ML
 
@@ -8,7 +7,7 @@ from ..const import MIN_WATER_AMOUNT_ML, MAX_WATER_AMOUNT_ML
 PROFILE_ID_REGEX = re.compile(r'^(p|plocal)\d+$')
 
 class CoffeeSchedule(BaseModel):
-    days: List[bool]
+    days: list[bool]
     secondFromStartOfTheDay: int
     enabled: bool
     amountOfWater: int
