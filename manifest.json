@@ -4,9 +4,8 @@
   "version": "0.5.0",
   "config_flow": true,
   "documentation": "https://github.com/NewsGuyTor/FellowAiden-HomeAssistant",
+  "issue_tracker": "https://github.com/NewsGuyTor/FellowAiden-HomeAssistant/issues",
   "requirements": ["pydantic>=2.0.0"],
   "codeowners": ["@NewsGuyTor"],
-  "iot_class": "cloud_polling",
-  "icon": "icon.png",
-  "logo": "logo.png"
+  "iot_class": "cloud_polling"
 }

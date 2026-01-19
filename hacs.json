@@ -1,11 +1,5 @@
 {
   "name": "Fellow Aiden",
   "content_in_root": true,
-  "domains": ["fellow"],
-  "codeowners": ["@NewsGuyTor"],
-  "iot_class": "cloud_polling",
-  "documentation": "https://github.com/NewsGuyTor/FellowAiden-HomeAssistant/blob/main/README.md",
-  "dependencies": [],
-  "requirements": ["pydantic"],
-  "logo": "https://raw.githubusercontent.com/NewsGuyTor/FellowAiden-HomeAssistant/main/logo.png"
+  "render_readme": true
 }
