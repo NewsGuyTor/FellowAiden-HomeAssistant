@@ -1,11 +1,11 @@
 {
   "domain": "fellow",
   "name": "Fellow Aiden",
-  "version": "0.5.0",
+  "codeowners": ["@NewsGuyTor"],
   "config_flow": true,
   "documentation": "https://github.com/NewsGuyTor/FellowAiden-HomeAssistant",
+  "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/NewsGuyTor/FellowAiden-HomeAssistant/issues",
   "requirements": ["pydantic>=2.0.0"],
-  "codeowners": ["@NewsGuyTor"],
-  "iot_class": "cloud_polling"
+  "version": "0.5.0"
 }
