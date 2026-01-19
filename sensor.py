@@ -20,6 +20,7 @@ STANDARD_SENSORS = [
     ("totalBrewingCycles", "Total Brews", None, "mdi:counter"),
     # Convert totalWaterVolumeL (in ml) to liters for display
     ("totalWaterVolumeL", "Total Water Volume", "L", "mdi:cup-water"),
+    ("brewingWaterVolumeMl", "Last Brew Volume", "mL", "mdi:coffee-outline"),
 ]
 
 # Definitions for brew time-related sensors
@@ -640,6 +641,8 @@ class AidenCurrentProfileSensor(FellowAidenBaseEntity, SensorEntity):
         self._attr_name = "Aiden Current Profile"
         self._attr_unique_id = f"{entry.entry_id}-current_profile"
         self._attr_icon = "mdi:coffee"
+        self.detection_method = "unknown"
+        self.confidence = "low"
 
     @property
     def native_value(self) -> str | None:
@@ -647,9 +650,23 @@ class AidenCurrentProfileSensor(FellowAidenBaseEntity, SensorEntity):
         _LOGGER.debug("Getting current profile value")
         data = self.coordinator.data
         _LOGGER.debug(f"Data available: {data is not None}, profiles count: {len(data.get('profiles', [])) if data else 0}")
-        
-        # Method 1: Check for most recently used profile by lastUsedTime
+
         if data and "profiles" in data and data["profiles"]:
+            # Method 1: Check against the "ibSelectedProfileId" field, if set.
+            device_config = data.get("device_config")
+            if device_config:
+                selected_profile_id = device_config.get("ibSelectedProfileId")
+                if selected_profile_id:
+                    selected_profile = next(
+                        (p for p in data["profiles"] if p.get("id") == selected_profile_id),
+                        None
+                    )
+                    if selected_profile:
+                        self.detection_method = "Selected Profile Id"
+                        self.confidence = "very_high"
+                        return selected_profile.get("title", "Selected Profile")
+
+            # Method 2: Check for most recently used profile by lastUsedTime
             profiles_with_last_used = []
             for profile in data["profiles"]:
                 last_used = profile.get("lastUsedTime")
@@ -660,35 +677,43 @@ class AidenCurrentProfileSensor(FellowAidenBaseEntity, SensorEntity):
                             profiles_with_last_used.append((profile, last_used_timestamp))
                     except (ValueError, TypeError):
                         continue
-            
+
             # Sort by lastUsedTime descending and return the most recent
             if profiles_with_last_used:
                 profiles_with_last_used.sort(key=lambda x: x[1], reverse=True)
                 most_recent_profile = profiles_with_last_used[0][0]
                 _LOGGER.debug(f"Found most recent profile: {most_recent_profile.get('title')} (lastUsedTime: {profiles_with_last_used[0][1]})")
+                self.detection_method = "Recent Profile"
+                self.confidence = "very_high"
                 return most_recent_profile.get("title", "Recent Profile")
-        
-        # Method 2: Check for default profile flag
+
+        # Method 3: Check for default profile flag
         if data and "profiles" in data and data["profiles"]:
             default_profile = next(
-                (p for p in data["profiles"] if p.get("isDefaultProfile")), 
+                (p for p in data["profiles"] if p.get("isDefaultProfile")),
                 None
             )
             if default_profile:
                 _LOGGER.debug(f"Using default profile: {default_profile.get('title')}")
+                self.detection_method = "Default Profile"
+                self.confidence = "medium"
                 return default_profile.get("title", "Default Profile")
-        
-        # Method 3: Use most popular profile from history
+
+        # Method 4: Use most popular profile from history
         most_popular = self.coordinator.history_manager.get_most_popular_profile()
         if most_popular:
             _LOGGER.debug(f"Using most popular from history: {most_popular}")
+            self.detection_method = "historical_usage"
+            self.confidence = "low_medium"
             return most_popular
-        
-        # Method 4: Fallback to first available profile
+
+        # Method 5: Fallback to first available profile
         if data and "profiles" in data and data["profiles"]:
             _LOGGER.debug("Using first available profile")
+            self.detection_method = "first_available"
+            self.confidence = "low"
             return data["profiles"][0].get("title", "Profile 1")
-        
+
         return "No profiles available"
 
     @property
@@ -696,14 +721,11 @@ class AidenCurrentProfileSensor(FellowAidenBaseEntity, SensorEntity):
         """Return additional attributes."""
         data = self.coordinator.data
         total_profiles = len(data.get("profiles", [])) if data else 0
-        
-        # Determine detection method (matches the logic in native_value)
-        detection_method = "unknown"
-        confidence = "low"
+
         last_used_time = None
-        
+
         if data and "profiles" in data and data["profiles"]:
-            # Check for most recently used profile first
+            # Get last used time for display
             profiles_with_last_used = []
             for profile in data["profiles"]:
                 last_used = profile.get("lastUsedTime")
@@ -714,7 +736,7 @@ class AidenCurrentProfileSensor(FellowAidenBaseEntity, SensorEntity):
                             profiles_with_last_used.append((profile, last_used_timestamp))
                     except (ValueError, TypeError):
                         continue
-            
+
             if profiles_with_last_used:
                 from homeassistant.util import dt as dt_util
                 profiles_with_last_used.sort(key=lambda x: x[1], reverse=True)
@@ -724,30 +746,11 @@ class AidenCurrentProfileSensor(FellowAidenBaseEntity, SensorEntity):
                     last_used_time = last_used_dt.isoformat()
                 except (ValueError, OSError, OverflowError):
                     pass
-                detection_method = "last_used_time"
-                confidence = "very_high"
-            else:
-                # Fallback to default profile flag
-                default_profile = next(
-                    (p for p in data["profiles"] if p.get("isDefaultProfile")), 
-                    None
-                )
-                if default_profile:
-                    detection_method = "default_profile_flag"
-                    confidence = "medium"
-                else:
-                    most_popular = self.coordinator.history_manager.get_most_popular_profile()
-                    if most_popular:
-                        detection_method = "historical_usage"
-                        confidence = "low_medium"
-                    else:
-                        detection_method = "first_available"
-                        confidence = "low"
-        
+
         attrs = {
             "total_profiles": total_profiles,
-            "detection_method": detection_method,
-            "confidence": confidence,
+            "detection_method": self.detection_method,
+            "confidence": self.confidence,
         }
         
         # Add last used time if available

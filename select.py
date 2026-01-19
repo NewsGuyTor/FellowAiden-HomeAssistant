@@ -51,6 +51,23 @@ class FellowAidenProfilesSelect(CoordinatorEntity, SelectEntity):
         if not data or "profiles" not in data or not data["profiles"]:
             return None
 
+        # Return the "ibSelectedProfileId" if it's present
+        selected_profile_id = None
+
+        device_config = self.coordinator.data.get("device_config")
+        if device_config:
+            selected_profile_id = device_config.get("ibSelectedProfileId")
+
+            if selected_profile_id:
+                selected_profile = next(
+                    (p for p in data["profiles"] if p.get("id") == selected_profile_id),
+                    None
+                )
+
+                if selected_profile:
+                    return selected_profile["title"]
+
+
         # If the device data has 'isDefaultProfile', pick that
         default_profile = next(
             (p for p in data["profiles"] if p.get("isDefaultProfile")),
