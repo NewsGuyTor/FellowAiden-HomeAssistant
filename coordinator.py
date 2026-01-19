@@ -94,16 +94,6 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         try:
             _LOGGER.debug("Attempting to fetch device data.")
             self.api._FellowAiden__device()  # <-- HACK: Accessing private method
-        except (ConnectionError, TimeoutError, OSError) as e:
-            _LOGGER.error("Error fetching device data: %s. Attempting to re-authenticate.", e)
-            try:
-                _LOGGER.debug("Re-authenticating user.")
-                self.api._FellowAiden__auth()  # <-- HACK: Accessing private method
-                _LOGGER.debug("Re-authentication successful. Re-fetching device data.")
-                self.api._FellowAiden__device()  # <-- HACK: Accessing private method
-            except Exception as auth_e:
-                _LOGGER.error("Re-authentication failed: %s", auth_e)
-                raise UpdateFailed(f"Error updating data: {auth_e}") from auth_e
         except Exception as e:
             _LOGGER.error("Error fetching device data: %s. Attempting to re-authenticate.", e)
             try:

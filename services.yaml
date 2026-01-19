@@ -102,8 +102,8 @@ create_profile:
           step: 1
           mode: box
     ssPulseTemperatures:
-      name: "Single Serve Pulse Temperatures"
-      description: "Temperatures for each Single Serve pulse. Accepts comma-separated integers or JSON array (e.g., 96,97,98 or [96,97,98]). Values in °F."
+      name: "Single Serve Pulse Temperatures (°C)"
+      description: "Temperatures for each Single Serve pulse. Accepts comma-separated integers or JSON array (e.g., 96,97,98 or [96,97,98]). Values in °C (50–99)."
       required: true
       example: "96,97,98"
       selector:
@@ -138,8 +138,8 @@ create_profile:
           step: 1
           mode: box
     batchPulseTemperatures:
-      name: "Batch Pulse Temperatures"
-      description: "A list of temperatures for each batch pulse (e.g. `[96, 97]`)."
+      name: "Batch Pulse Temperatures (°C)"
+      description: "A list of temperatures for each batch pulse (e.g. `[96, 97]`). Values in °C (50–99)."
       required: true
       example: "[96,97]"
       selector:

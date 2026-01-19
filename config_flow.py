@@ -28,9 +28,9 @@ class FellowAidenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             # Try authenticating (blocking) in executor
             try:
                 await self.hass.async_add_executor_job(FellowAiden, email, password)
-            except Exception as e:
+            except Exception:
                 # Log with traceback for unexpected errors
-                _LOGGER.exception("Error authenticating: %s", e)
+                _LOGGER.exception("Error authenticating")
                 errors["base"] = "auth"
             else:
                 # Set unique_id based on email to prevent duplicate entries
