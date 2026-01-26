@@ -323,3 +323,54 @@ refresh_and_log_data:
   name: "Refresh and Log Full Data"
   description: "Manually refreshes all data from the Fellow API and logs the complete response."
   fields: {}
+
+brew_now:
+  name: "Brew Now"
+  description: "Schedules a brew to start soon (schedule-now hack) and then deletes the created schedule so it won't accumulate or repeat weekly."
+  fields:
+    amountOfWater:
+      name: "Water Amount (mL)"
+      description: "Amount of water to use for brewing (150-1500 mL)."
+      required: false
+      default: 300
+      selector:
+        number:
+          min: 150
+          max: 1500
+          step: 1
+          unit_of_measurement: "mL"
+          mode: box
+    profileName:
+      name: "Profile Name"
+      description: "Profile name to use. If omitted, uses current selection; otherwise falls back to Light Roast."
+      required: false
+      selector:
+        text:
+    profileId:
+      name: "Profile ID"
+      description: "Profile ID to use (alternative to name)."
+      required: false
+      selector:
+        text:
+    offsetSeconds:
+      name: "Start Delay (seconds)"
+      description: "How far in the future to schedule the brew (default 90s)."
+      required: false
+      default: 90
+      selector:
+        number:
+          min: 30
+          max: 600
+          step: 1
+          mode: box
+    cleanupAfterSeconds:
+      name: "Delete Schedule After (seconds)"
+      description: "How long after creation to delete the created schedule (default 900s)."
+      required: false
+      default: 900
+      selector:
+        number:
+          min: 60
+          max: 3600
+          step: 10
+          mode: box

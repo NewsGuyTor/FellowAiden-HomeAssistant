@@ -1,6 +1,6 @@
 """Constants for Fellow Aiden."""
 DOMAIN = "fellow"
-PLATFORMS = ["sensor", "select", "binary_sensor"]
+PLATFORMS = ["sensor", "select", "binary_sensor", "button"]
 
 # Update intervals
 DEFAULT_UPDATE_INTERVAL_MINUTES = 1

@@ -263,6 +263,82 @@ def async_register_services(hass: HomeAssistant) -> None:
             raise
 
 
+    async def async_brew_now(call) -> None:
+        """Schedule a brew soon (schedule-now hack) and then delete the created schedule."""
+        coordinator = get_coordinator()
+
+        # Defaults
+        amount = int(call.data.get("amountOfWater", 300))
+        offset_seconds = int(call.data.get("offsetSeconds", 90))
+        cleanup_seconds = int(call.data.get("cleanupAfterSeconds", 15 * 60))
+
+        # Resolve profile: param > HA select > HA sensor > fallback
+        profile_input = call.data.get("profileName") or call.data.get("profileId")
+
+        if not profile_input:
+            st = hass.states.get("select.fellow_aiden_profiles")
+            if st and st.state not in ("unknown", "unavailable"):
+                profile_input = st.state
+
+        if not profile_input:
+            st = hass.states.get("sensor.aiden_current_profile")
+            if st and st.state not in ("unknown", "unavailable"):
+                profile_input = st.state
+
+        if not profile_input:
+            profile_input = "Light Roast"
+
+        # Compute target time
+        now = dt_util.now()
+        target = now + timedelta(seconds=offset_seconds)
+        target = target.replace(second=0, microsecond=0)
+        seconds_from_start_of_day = target.hour * 3600 + target.minute * 60 + target.second
+
+        # days array: [sun, mon, tue, wed, thu, fri, sat]
+        py_wd = target.weekday()  # mon=0..sun=6
+        fellow_index = (py_wd + 1) % 7
+        days = [False] * 7
+        days[fellow_index] = True
+
+        # Resolve profile name -> id (same logic as create_schedule)
+        profile_id = get_profile_id_by_name(profile_input)
+        if not profile_id:
+            import re
+            profile_id_regex = re.compile(r"^(p|plocal)\d+$")
+            if profile_id_regex.match(profile_input):
+                profile_id = profile_input
+            else:
+                available_names = get_available_profile_names()
+                raise ServiceValidationError(
+                    f"Profile '{profile_input}' not found. Available profiles: {', '.join(available_names)}"
+                )
+
+        schedule_data = {
+            "days": days,
+            "secondFromStartOfTheDay": seconds_from_start_of_day,
+            "enabled": True,
+            "amountOfWater": amount,
+            "profileId": profile_id,
+        }
+
+        _LOGGER.info(
+            "brew_now: scheduling at %s water=%s profile=%s",
+            target.isoformat(),
+            amount,
+            profile_input,
+        )
+
+        created = await coordinator.async_create_schedule(schedule_data)
+
+        sid = created.get("id") if isinstance(created, dict) else None
+        if sid:
+            def _cleanup() -> None:
+                _LOGGER.info("brew_now: deleting schedule %s", sid)
+                hass.async_create_task(coordinator.async_delete_schedule(sid))
+
+            hass.loop.call_later(cleanup_seconds, _cleanup)
+
+
     async def async_list_profiles(call) -> ServiceResponse:
         """List all available profiles with names and IDs."""
         coordinator = get_coordinator()
@@ -437,4 +513,11 @@ def async_register_services(hass: HomeAssistant) -> None:
         async_refresh_and_log_data,
         schema=None,
         supports_response=SupportsResponse.ONLY,
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        "brew_now",
+        async_brew_now,
+        schema=None,
     )

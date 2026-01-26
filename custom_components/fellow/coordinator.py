@@ -155,6 +155,7 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise
         self._next_refresh_verbose = True
         await self.async_request_refresh()
+        return result
 
     async def async_delete_profile(self, profile_id: str) -> None:
         """Delete a brew profile and refresh coordinator data."""
@@ -172,7 +173,7 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._next_refresh_verbose = True
         await self.async_request_refresh()
 
-    async def async_create_schedule(self, schedule_data: dict[str, Any]) -> None:
+    async def async_create_schedule(self, schedule_data: dict[str, Any]) -> dict[str, Any] | None:
         """Create a new brew schedule and refresh coordinator data."""
         if not self.api:
             raise RuntimeError("Fellow Aiden library not initialized")
@@ -187,6 +188,7 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise
         self._next_refresh_verbose = True
         await self.async_request_refresh()
+        return result
 
     async def async_delete_schedule(self, schedule_id: str) -> None:
         """Delete a brew schedule and refresh coordinator data."""
