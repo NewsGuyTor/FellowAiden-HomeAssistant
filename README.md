@@ -3,7 +3,7 @@
 <p align="center">
   <a href="https://github.com/NewsGuyTor/FellowAiden-HomeAssistant/releases"><img src="https://img.shields.io/github/v/release/NewsGuyTor/FellowAiden-HomeAssistant" alt="GitHub Release"></a>
   <a href="https://github.com/NewsGuyTor/FellowAiden-HomeAssistant/actions/workflows/validate.yml"><img src="https://img.shields.io/github/actions/workflow/status/NewsGuyTor/FellowAiden-HomeAssistant/validate.yml?label=validation" alt="Validation"></a>
-  <a href="https://github.com/hacs/integration"><img src="https://img.shields.io/badge/HACS-Custom-blue.svg" alt="HACS"></a>
+  <a href="https://github.com/hacs/integration"><img src="https://img.shields.io/badge/HACS-Default-blue.svg" alt="HACS"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/NewsGuyTor/FellowAiden-HomeAssistant" alt="License"></a>
 </p>
 
@@ -55,33 +55,19 @@ This is a custom integration that brings your coffee brewer into the Home Assist
 
 Choose one of the following methods to install the **Fellow Aiden** integration:
 
-### 1. Install via HACS
+### 1. Install via HACS (Recommended)
 
 **Prerequisites:**
 - **Home Assistant** and **HACS (Home Assistant Community Store)** installed. [HACS Installation Guide](https://hacs.xyz/docs/installation/prerequisites)
 
 **Steps:**
 
-1. **Add the Repository to HACS**
-   - Open Home Assistant and go to **Settings > Devices & Services**.
-   - Click on **HACS** in the sidebar.
-   - Navigate to the **Integrations** tab.
-   - Click the **three-dot menu** (⋮) and select **"Add Repository"**.
-   - Enter the repository URL:
-
-     ```text
-     https://github.com/NewsGuyTor/FellowAiden-HomeAssistant/
-     ```
-
-   - Choose **"Integration"** as the category and click **"Add"**.
-
-2. **Install the Integration**
-   - In HACS, go to the **Integrations** tab.
-   - Click the **"+" (Add)** button.
+1. **Install the Integration**
+   - Open Home Assistant and click on **HACS** in the sidebar.
    - Search for **"Fellow Aiden"** and select it.
-   - Click **"Install"**.
+   - Click **"Download"**.
 
-3. **Configure the Integration**
+2. **Configure the Integration**
    - **Restart Home Assistant**.
    - After restarting, navigate to **Settings > Devices & Services**.
    - Click **"Add Integration"**, find **"Fellow Aiden"**, and follow the prompts to log in with your brewer account credentials.
