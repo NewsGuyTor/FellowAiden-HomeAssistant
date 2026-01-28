@@ -72,9 +72,8 @@ Choose one of the following methods to install the **Fellow Aiden** integration:
    - After restarting, navigate to **Settings > Devices & Services**.
    - Click **"Add Integration"**, find **"Fellow Aiden"**, and follow the prompts to log in with your brewer account credentials.
 
-### 2. Manual Installation
-
-**Steps:**
+<details>
+<summary><strong>Manual Installation</strong></summary>
 
 1. **Download or Clone the Repository**
    ```bash
@@ -89,6 +88,8 @@ Choose one of the following methods to install the **Fellow Aiden** integration:
 3. **Add the Integration**
    - Go to **Settings > Devices & Services**.
    - Click **"Add Integration"**, search for **"Fellow Aiden"**, and follow the prompts to log in with your brewer account credentials.
+
+</details>
 
 ---
 
