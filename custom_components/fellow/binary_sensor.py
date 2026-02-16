@@ -17,6 +17,8 @@ from .base_entity import FellowAidenBaseEntity
 
 _LOGGER = logging.getLogger(__name__)
 
+PARALLEL_UPDATES = 0
+
 # (api_key, device_class, translation_key)
 BINARY_SENSORS = [
     ("brewing", BinarySensorDeviceClass.RUNNING, "brewing"),

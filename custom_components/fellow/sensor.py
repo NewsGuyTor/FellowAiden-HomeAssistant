@@ -13,6 +13,8 @@ from .base_entity import FellowAidenBaseEntity
 
 _LOGGER = logging.getLogger(__name__)
 
+PARALLEL_UPDATES = 0
+
 # Standard sensors: (api_key, translation_key, unit, icon)
 STANDARD_SENSORS = [
     ("chimeVolume", "chime_volume", None, "mdi:volume-high"),
