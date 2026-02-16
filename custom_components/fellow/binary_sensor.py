@@ -22,8 +22,8 @@ PARALLEL_UPDATES = 0
 # (api_key, device_class, translation_key)
 BINARY_SENSORS = [
     ("brewing", BinarySensorDeviceClass.RUNNING, "brewing"),
-    ("carafePresent", None, "carafe_inserted"),
-    ("heaterOn", None, "heater"),
+    ("carafePresent", BinarySensorDeviceClass.PRESENCE, "carafe_inserted"),
+    ("heaterOn", BinarySensorDeviceClass.HEAT, "heater"),
     ("lidClosed", BinarySensorDeviceClass.DOOR, "lid"),
     ("missingWater", BinarySensorDeviceClass.PROBLEM, "missing_water"),
 ]
