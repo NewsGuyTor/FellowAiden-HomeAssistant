@@ -7,7 +7,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, TIMESTAMP_2024_01_01, MIN_VALID_YEAR, MIN_HISTORICAL_DATA_FOR_ACCURACY
+from .const import DOMAIN, TIMESTAMP_2024_01_01, MIN_VALID_YEAR, MIN_HISTORICAL_DATA_FOR_ACCURACY, FellowAidenConfigEntry
 from .coordinator import FellowAidenDataUpdateCoordinator
 from .base_entity import FellowAidenBaseEntity
 
@@ -31,12 +31,12 @@ BREW_TIME_SENSORS = [
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: FellowAidenConfigEntry,
     async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up sensors for the Fellow Aiden integration."""
     _LOGGER.debug("Setting up sensors for entry %s", entry.entry_id)
-    coordinator: FellowAidenDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
 
     _LOGGER.debug("Coordinator data available: %s", coordinator.data is not None)
     if coordinator.data:

@@ -9,18 +9,18 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import DOMAIN, FellowAidenConfigEntry
 from .coordinator import FellowAidenDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(
     hass: HomeAssistant, 
-    entry: ConfigEntry, 
+    entry: FellowAidenConfigEntry, 
     async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up select entity listing all brew profiles."""
-    coordinator: FellowAidenDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     async_add_entities([FellowAidenProfilesSelect(coordinator, entry)], update_before_add=True)
 
 

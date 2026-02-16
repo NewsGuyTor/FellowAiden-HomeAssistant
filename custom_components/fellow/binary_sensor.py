@@ -12,7 +12,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from .const import DOMAIN, FellowAidenConfigEntry
 from .coordinator import FellowAidenDataUpdateCoordinator
 from .base_entity import FellowAidenBaseEntity
 
@@ -31,11 +31,11 @@ BINARY_SENSORS = [
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: FellowAidenConfigEntry,
     async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up Fellow Aiden binary sensors and the combined 'Basket' sensor."""
-    coordinator: FellowAidenDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
 
     binary_entities: list[FellowAidenBinarySensor] = []
     for key, device_class, name in BINARY_SENSORS:

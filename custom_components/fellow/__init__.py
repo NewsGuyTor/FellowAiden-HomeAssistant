@@ -8,15 +8,14 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceResponse, SupportsResponse
 from homeassistant.exceptions import ServiceValidationError
 
-from .const import DOMAIN, PLATFORMS, DEFAULT_PROFILE_TYPE
+from .const import DOMAIN, PLATFORMS, DEFAULT_PROFILE_TYPE, FellowAidenConfigEntry
 from .coordinator import FellowAidenDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: FellowAidenConfigEntry) -> bool:
     """Set up Fellow Aiden from a config entry."""
     _LOGGER.info(f"Setting up Fellow Aiden integration for entry {entry.entry_id}")
-    hass.data.setdefault(DOMAIN, {})
 
     email = entry.data["email"]
     password = entry.data["password"]
@@ -29,7 +28,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await coordinator.async_config_entry_first_refresh()
     _LOGGER.debug(f"First refresh completed, data available: {coordinator.data is not None}")
 
-    hass.data[DOMAIN][entry.entry_id] = coordinator
+    entry.runtime_data = coordinator
 
     # Forward platforms (sensor, etc.) and register services
     _LOGGER.debug(f"Forwarding platforms: {PLATFORMS}")
@@ -49,15 +48,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: FellowAidenConfigEntry) -> bool:
     """Unload a config entry."""
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id, None)
-    return unload_ok
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
-async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
+async def async_update_options(hass: HomeAssistant, entry: FellowAidenConfigEntry) -> None:
     """Update options when they change."""
     _LOGGER.debug("Options updated, reloading integration to apply new update interval")
     await hass.config_entries.async_reload(entry.entry_id)
@@ -82,21 +78,21 @@ def async_register_services(hass: HomeAssistant) -> None:
         Raises:
             ValueError: If no integrations are configured or entry_id is invalid.
         """
-        domain_data = hass.data.get(DOMAIN, {})
-        if not domain_data:
+        entries = hass.config_entries.async_entries(DOMAIN)
+        if not entries:
             raise ValueError("No Fellow Aiden integrations configured")
 
         if entry_id is not None:
-            if entry_id not in domain_data:
-                available = list(domain_data.keys())
+            entry = hass.config_entries.async_get_entry(entry_id)
+            if entry is None or entry.domain != DOMAIN:
+                available = [e.entry_id for e in entries]
                 raise ValueError(
                     f"Entry ID '{entry_id}' not found. Available entries: {available}"
                 )
-            return domain_data[entry_id]
+            return entry.runtime_data
 
-        # Get the first available coordinator (single-device fallback)
-        first_entry_id = next(iter(domain_data.keys()))
-        return domain_data[first_entry_id]
+        # Single-device fallback: use the first loaded entry
+        return entries[0].runtime_data
 
     def get_profile_id_by_name(profile_name: str, entry_id: str | None = None) -> str | None:
         """Get profile ID by profile name.
