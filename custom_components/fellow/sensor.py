@@ -375,7 +375,7 @@ class AidenTotalWaterTodaySensor(FellowAidenBaseEntity, SensorEntity):
         """Return total water used today using historical data."""
         # IMPORTANT: Only use historical tracking data, never fallback to device totals
         water_usage = self.coordinator.history_manager.get_water_usage_for_period(1)
-        _LOGGER.debug(f"Water usage today from history: {water_usage}L")
+        _LOGGER.debug("Water usage today from history: %s L", water_usage)
         
         # Ensure we never accidentally return device lifetime totals
         if water_usage is None or water_usage < 0:
@@ -416,7 +416,7 @@ class AidenTotalWaterWeekSensor(FellowAidenBaseEntity, SensorEntity):
         """Return total water used this week using historical data."""
         # IMPORTANT: Only use historical tracking data, never fallback to device totals
         water_usage = self.coordinator.history_manager.get_water_usage_for_period(7)
-        _LOGGER.debug(f"Water usage this week from history: {water_usage}L")
+        _LOGGER.debug("Water usage this week from history: %s L", water_usage)
         
         # Ensure we never accidentally return device lifetime totals
         if water_usage is None or water_usage < 0:
@@ -459,7 +459,7 @@ class AidenTotalWaterMonthSensor(FellowAidenBaseEntity, SensorEntity):
         """Return total water used this month using historical data."""
         # IMPORTANT: Only use historical tracking data, never fallback to device totals
         water_usage = self.coordinator.history_manager.get_water_usage_for_period(30)
-        _LOGGER.debug(f"Water usage this month from history: {water_usage}L")
+        _LOGGER.debug("Water usage this month from history: %s L", water_usage)
         
         # Ensure we never accidentally return device lifetime totals
         if water_usage is None or water_usage < 0:
@@ -624,7 +624,11 @@ class AidenCurrentProfileSensor(FellowAidenBaseEntity, SensorEntity):
         """Return the current profile name."""
         _LOGGER.debug("Getting current profile value")
         data = self.coordinator.data
-        _LOGGER.debug(f"Data available: {data is not None}, profiles count: {len(data.get('profiles', [])) if data else 0}")
+        _LOGGER.debug(
+            "Profile data available: %s, profiles: %d",
+            data is not None,
+            len(data.get("profiles", [])) if data else 0,
+        )
 
         if data and "profiles" in data and data["profiles"]:
             # Method 1: Check against the "ibSelectedProfileId" field, if set.
@@ -657,7 +661,11 @@ class AidenCurrentProfileSensor(FellowAidenBaseEntity, SensorEntity):
             if profiles_with_last_used:
                 profiles_with_last_used.sort(key=lambda x: x[1], reverse=True)
                 most_recent_profile = profiles_with_last_used[0][0]
-                _LOGGER.debug(f"Found most recent profile: {most_recent_profile.get('title')} (lastUsedTime: {profiles_with_last_used[0][1]})")
+                _LOGGER.debug(
+                    "Most recent profile: %s (lastUsedTime: %s)",
+                    most_recent_profile.get("title"),
+                    profiles_with_last_used[0][1],
+                )
                 self.detection_method = "Recent Profile"
                 self.confidence = "very_high"
                 return most_recent_profile.get("title", "Recent Profile")
@@ -669,7 +677,7 @@ class AidenCurrentProfileSensor(FellowAidenBaseEntity, SensorEntity):
                 None
             )
             if default_profile:
-                _LOGGER.debug(f"Using default profile: {default_profile.get('title')}")
+                _LOGGER.debug("Using default profile: %s", default_profile.get("title"))
                 self.detection_method = "Default Profile"
                 self.confidence = "medium"
                 return default_profile.get("title", "Default Profile")
@@ -677,7 +685,7 @@ class AidenCurrentProfileSensor(FellowAidenBaseEntity, SensorEntity):
         # Method 4: Use most popular profile from history
         most_popular = self.coordinator.history_manager.get_most_popular_profile()
         if most_popular:
-            _LOGGER.debug(f"Using most popular from history: {most_popular}")
+            _LOGGER.debug("Using most popular from history: %s", most_popular)
             self.detection_method = "historical_usage"
             self.confidence = "low_medium"
             return most_popular
