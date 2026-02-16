@@ -21,18 +21,18 @@ _LOGGER = logging.getLogger(__name__)
 
 PARALLEL_UPDATES = 0
 
-# Standard sensors: (api_key, translation_key, unit, icon, device_class, state_class, entity_category, disabled_default)
+# Standard sensors: (api_key, translation_key, unit, device_class, state_class, entity_category, disabled_default)
 STANDARD_SENSORS = [
-    ("chimeVolume", "chime_volume", None, "mdi:volume-high", None, None, EntityCategory.DIAGNOSTIC, True),
-    ("totalBrewingCycles", "total_brews", None, "mdi:counter", None, SensorStateClass.TOTAL_INCREASING, None, False),
-    ("totalWaterVolumeL", "total_water_volume", UnitOfVolume.LITERS, "mdi:cup-water", SensorDeviceClass.VOLUME, SensorStateClass.TOTAL_INCREASING, None, False),
-    ("brewingWaterVolumeMl", "last_brew_volume", UnitOfVolume.MILLILITERS, "mdi:coffee-outline", SensorDeviceClass.VOLUME, None, None, False),
+    ("chimeVolume", "chime_volume", None, None, None, EntityCategory.DIAGNOSTIC, True),
+    ("totalBrewingCycles", "total_brews", None, None, SensorStateClass.TOTAL_INCREASING, None, False),
+    ("totalWaterVolumeL", "total_water_volume", UnitOfVolume.LITERS, SensorDeviceClass.VOLUME, SensorStateClass.TOTAL_INCREASING, None, False),
+    ("brewingWaterVolumeMl", "last_brew_volume", UnitOfVolume.MILLILITERS, SensorDeviceClass.VOLUME, None, None, False),
 ]
 
-# Brew time sensors: (api_key, translation_key, icon)
+# Brew time sensors: (api_key, translation_key)
 BREW_TIME_SENSORS = [
-    ("brewStartTime", "last_brew_start_time", "mdi:clock-start"),
-    ("brewEndTime", "last_brew_end_time", "mdi:clock-end"),
+    ("brewStartTime", "last_brew_start_time"),
+    ("brewEndTime", "last_brew_end_time"),
 ]
 
 async def async_setup_entry(
@@ -51,7 +51,7 @@ async def async_setup_entry(
     entities: list[SensorEntity] = []
 
     # Standard sensors from device config
-    for key, translation_key, unit, icon, device_class, state_class, category, disabled in STANDARD_SENSORS:
+    for key, translation_key, unit, device_class, state_class, category, disabled in STANDARD_SENSORS:
         entities.append(
             AidenSensor(
                 coordinator=coordinator,
@@ -59,7 +59,6 @@ async def async_setup_entry(
                 key=key,
                 translation_key=translation_key,
                 unit=unit,
-                icon=icon,
                 device_class=device_class,
                 state_class=state_class,
                 entity_category=category,
@@ -76,14 +75,13 @@ async def async_setup_entry(
     )
 
     # Brew time sensors
-    for key, translation_key, icon in BREW_TIME_SENSORS:
+    for key, translation_key in BREW_TIME_SENSORS:
         entities.append(
             AidenBrewTimeSensor(
                 coordinator=coordinator,
                 entry=entry,
                 key=key,
                 translation_key=translation_key,
-                icon=icon
             )
         )
 
@@ -123,7 +121,6 @@ class AidenSensor(FellowAidenBaseEntity, SensorEntity):
         key: str,
         translation_key: str,
         unit: str | None,
-        icon: str | None,
         device_class: SensorDeviceClass | None = None,
         state_class: SensorStateClass | None = None,
         entity_category: EntityCategory | None = None,
@@ -135,7 +132,6 @@ class AidenSensor(FellowAidenBaseEntity, SensorEntity):
         self._attr_translation_key = translation_key
         self._attr_unique_id = f"{entry.entry_id}-{key}"
         self._attr_native_unit_of_measurement = unit
-        self._attr_icon = icon
         self._attr_device_class = device_class
         self._attr_state_class = state_class
         self._attr_entity_category = entity_category
@@ -166,7 +162,6 @@ class AidenAverageWaterPerBrewSensor(FellowAidenBaseEntity, SensorEntity):
         self._entry_id = entry.entry_id
         self._attr_translation_key = "average_water_per_brew"
         self._attr_unique_id = f"{entry.entry_id}-avg_water_per_brew"
-        self._attr_icon = "mdi:cup-water"
         self._attr_native_unit_of_measurement = UnitOfVolume.MILLILITERS
         self._attr_device_class = SensorDeviceClass.VOLUME
 
@@ -195,14 +190,12 @@ class AidenBrewTimeSensor(FellowAidenBaseEntity, SensorEntity):
         entry: ConfigEntry,
         key: str,
         translation_key: str,
-        icon: str,
     ) -> None:
         super().__init__(coordinator)
         self._entry_id = entry.entry_id
         self._key = key
         self._attr_translation_key = translation_key
         self._attr_unique_id = f"{entry.entry_id}-{key}"
-        self._attr_icon = icon
 
     @property
     def native_value(self) -> str | None:
@@ -246,7 +239,6 @@ class AidenLastBrewDurationSensor(FellowAidenBaseEntity, SensorEntity):
         self._entry_id = entry.entry_id
         self._attr_translation_key = "last_brew_duration"
         self._attr_unique_id = f"{entry.entry_id}-last_brew_duration"
-        self._attr_icon = "mdi:timer-outline"
         self._attr_native_unit_of_measurement = UnitOfTime.SECONDS
         self._attr_device_class = SensorDeviceClass.DURATION
 
@@ -296,7 +288,6 @@ class AidenAverageTimeBetweenBrewsSensor(FellowAidenBaseEntity, SensorEntity):
         self._entry_id = entry.entry_id
         self._attr_translation_key = "average_time_between_brews"
         self._attr_unique_id = f"{entry.entry_id}-avg_time_between_brews"
-        self._attr_icon = "mdi:clock-outline"
         self._attr_native_unit_of_measurement = UnitOfTime.HOURS
         self._attr_device_class = SensorDeviceClass.DURATION
         self._attr_entity_category = EntityCategory.DIAGNOSTIC
@@ -330,7 +321,6 @@ class AidenLastBrewTimeSensor(FellowAidenBaseEntity, SensorEntity):
         self._entry_id = entry.entry_id
         self._attr_translation_key = "last_brew_time"
         self._attr_unique_id = f"{entry.entry_id}-last_brew_time"
-        self._attr_icon = "mdi:coffee-outline"
         self._attr_device_class = "timestamp"
 
     @property
@@ -376,7 +366,6 @@ class AidenTotalWaterTodaySensor(FellowAidenBaseEntity, SensorEntity):
         self._entry_id = entry.entry_id
         self._attr_translation_key = "total_water_today"
         self._attr_unique_id = f"{entry.entry_id}-total_water_today"
-        self._attr_icon = "mdi:water"
         self._attr_native_unit_of_measurement = UnitOfVolume.LITERS
         self._attr_device_class = SensorDeviceClass.VOLUME
         self._attr_state_class = SensorStateClass.TOTAL_INCREASING
@@ -418,7 +407,6 @@ class AidenTotalWaterWeekSensor(FellowAidenBaseEntity, SensorEntity):
         self._entry_id = entry.entry_id
         self._attr_translation_key = "total_water_this_week"
         self._attr_unique_id = f"{entry.entry_id}-total_water_week"
-        self._attr_icon = "mdi:water"
         self._attr_native_unit_of_measurement = UnitOfVolume.LITERS
         self._attr_device_class = SensorDeviceClass.VOLUME
         self._attr_state_class = SensorStateClass.TOTAL_INCREASING
@@ -462,7 +450,6 @@ class AidenTotalWaterMonthSensor(FellowAidenBaseEntity, SensorEntity):
         self._entry_id = entry.entry_id
         self._attr_translation_key = "total_water_this_month"
         self._attr_unique_id = f"{entry.entry_id}-total_water_month"
-        self._attr_icon = "mdi:water"
         self._attr_native_unit_of_measurement = UnitOfVolume.LITERS
         self._attr_device_class = SensorDeviceClass.VOLUME
         self._attr_state_class = SensorStateClass.TOTAL_INCREASING
@@ -506,7 +493,6 @@ class AidenAverageBrewDurationSensor(FellowAidenBaseEntity, SensorEntity):
         self._entry_id = entry.entry_id
         self._attr_translation_key = "average_brew_duration"
         self._attr_unique_id = f"{entry.entry_id}-avg_brew_duration"
-        self._attr_icon = "mdi:timer"
         self._attr_native_unit_of_measurement = UnitOfTime.MINUTES
         self._attr_device_class = SensorDeviceClass.DURATION
 
@@ -567,7 +553,6 @@ class AidenMostPopularProfileSensor(FellowAidenBaseEntity, SensorEntity):
         self._entry_id = entry.entry_id
         self._attr_translation_key = "most_popular_profile"
         self._attr_unique_id = f"{entry.entry_id}-most_popular_profile"
-        self._attr_icon = "mdi:star"
         self._attr_entity_category = EntityCategory.DIAGNOSTIC
         self._attr_entity_registry_enabled_default = False
 
@@ -631,7 +616,6 @@ class AidenCurrentProfileSensor(FellowAidenBaseEntity, SensorEntity):
         self._entry_id = entry.entry_id
         self._attr_translation_key = "current_profile"
         self._attr_unique_id = f"{entry.entry_id}-current_profile"
-        self._attr_icon = "mdi:coffee"
         self.detection_method = "unknown"
         self.confidence = "low"
 
@@ -770,7 +754,6 @@ class AidenBasketSensor(FellowAidenBaseEntity, SensorEntity):
         self._entry_id = entry.entry_id
         self._attr_translation_key = "basket"
         self._attr_unique_id = f"{entry.entry_id}-basket"
-        self._attr_icon = "mdi:basket"
 
     @property
     def native_value(self) -> str:
