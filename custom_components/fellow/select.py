@@ -7,35 +7,41 @@ from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, FellowAidenConfigEntry
+from .const import FellowAidenConfigEntry
 from .coordinator import FellowAidenDataUpdateCoordinator
+from .base_entity import FellowAidenBaseEntity
 
 _LOGGER = logging.getLogger(__name__)
 
+
 async def async_setup_entry(
-    hass: HomeAssistant, 
-    entry: FellowAidenConfigEntry, 
-    async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant,
+    entry: FellowAidenConfigEntry,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up select entity listing all brew profiles."""
     coordinator = entry.runtime_data
     async_add_entities([FellowAidenProfilesSelect(coordinator, entry)], update_before_add=True)
 
 
-class FellowAidenProfilesSelect(CoordinatorEntity, SelectEntity):
-    """Select entity that shows all Fellow Aiden brew profiles by title."""
+class FellowAidenProfilesSelect(FellowAidenBaseEntity, SelectEntity):
+    """Dropdown showing available brew profiles.
+
+    Selecting a profile from the UI is not supported by the Fellow API,
+    so async_select_option logs a warning and does nothing. Use the
+    schedule or device controls to brew with a specific profile.
+    """
 
     def __init__(self, coordinator: FellowAidenDataUpdateCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator)
         self._entry_id = entry.entry_id
         self._attr_unique_id = f"{entry.entry_id}-profile_select"
-        self._attr_name = "Fellow Aiden Profiles"
+        self._attr_translation_key = "profiles"
 
     @property
     def options(self) -> list[str]:
-        """Return a list of profile titles."""
+        """Return profile titles."""
         data = self.coordinator.data
         if not data or "profiles" not in data:
             return []
@@ -43,48 +49,34 @@ class FellowAidenProfilesSelect(CoordinatorEntity, SelectEntity):
 
     @property
     def current_option(self) -> str | None:
-        """
-        Return which profile is considered 'active' (if the device tracks that),
-        or a default profile if flagged, otherwise just the first profile.
-        """
+        """Return the active profile, or the default, or the first one."""
         data = self.coordinator.data
         if not data or "profiles" not in data or not data["profiles"]:
             return None
 
-        # Return the "ibSelectedProfileId" if it's present
-        selected_profile_id = None
-
         device_config = self.coordinator.data.get("device_config")
         if device_config:
             selected_profile_id = device_config.get("ibSelectedProfileId")
-
             if selected_profile_id:
                 selected_profile = next(
                     (p for p in data["profiles"] if p.get("id") == selected_profile_id),
-                    None
+                    None,
                 )
-
                 if selected_profile:
                     return selected_profile["title"]
 
-
-        # If the device data has 'isDefaultProfile', pick that
         default_profile = next(
             (p for p in data["profiles"] if p.get("isDefaultProfile")),
-            None
+            None,
         )
         if default_profile:
             return default_profile.get("title", "Default Profile")
 
-        # Otherwise, just pick the first one
-        first_profile = data["profiles"][0]
-        return first_profile.get("title", "Profile 1")
+        return data["profiles"][0].get("title", "Profile 1")
 
     async def async_select_option(self, option: str) -> None:
-        """
-        Called when a user selects a profile from the drop-down.
-        Currently disabled - use services to manage profiles instead.
-        """
-        _LOGGER.info("Profile selection attempted for '%s', but this feature is disabled", option)
-        _LOGGER.info("Use schedules or device controls to start a brew with a specific profile instead")
-        # Note: This method is required by Home Assistant but we don't implement profile switching
+        """No-op. The Fellow API doesn't support switching profiles remotely."""
+        _LOGGER.info(
+            "Profile selection for '%s' ignored; the Fellow API doesn't support remote profile switching",
+            option,
+        )
