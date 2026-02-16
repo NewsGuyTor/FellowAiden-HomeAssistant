@@ -7,6 +7,7 @@ from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .fellow_aiden import FellowAiden
@@ -103,7 +104,9 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 self.api._FellowAiden__device()  # <-- HACK: Accessing private method
             except Exception as auth_e:
                 _LOGGER.error("Re-authentication failed: %s", auth_e)
-                raise UpdateFailed(f"Error updating data: {auth_e}") from auth_e
+                raise ConfigEntryAuthFailed(
+                    f"Authentication failed: {auth_e}"
+                ) from auth_e
 
         brewer_name = self.api.get_display_name()
         profiles = self.api.get_profiles()
