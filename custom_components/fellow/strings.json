@@ -234,5 +234,55 @@
       "name": "Refresh and log data",
       "description": "Forces a data refresh and returns the full API response."
     }
+  },
+  "exceptions": {
+    "no_integrations": {
+      "message": "No Fellow Aiden integrations configured."
+    },
+    "not_loaded": {
+      "message": "Fellow Aiden integration is not loaded. Check Settings > Integrations."
+    },
+    "profile_id_required": {
+      "message": "profile_id is required."
+    },
+    "profile_not_found": {
+      "message": "Profile \"{profile}\" not found. Available: {available}."
+    },
+    "no_profiles": {
+      "message": "No profiles available."
+    },
+    "provide_profile_id_or_name": {
+      "message": "Provide profile_name or profile_id."
+    },
+    "provide_schedule_profile": {
+      "message": "Provide profileName or profileId."
+    },
+    "schedule_id_required": {
+      "message": "schedule_id is required."
+    },
+    "time_required": {
+      "message": "'time' is required."
+    },
+    "bad_time_format": {
+      "message": "Bad time format: \"{time_str}\". Use HH:MM:SS."
+    },
+    "create_profile_failed": {
+      "message": "Failed to create profile: {error}"
+    },
+    "delete_profile_failed": {
+      "message": "Failed to delete profile: {error}"
+    },
+    "create_schedule_failed": {
+      "message": "Failed to create schedule: {error}"
+    },
+    "delete_schedule_failed": {
+      "message": "Failed to delete schedule: {error}"
+    },
+    "toggle_schedule_failed": {
+      "message": "Failed to toggle schedule: {error}"
+    },
+    "reset_water_failed": {
+      "message": "Failed to reset water tracking: {error}"
+    }
   }
 }

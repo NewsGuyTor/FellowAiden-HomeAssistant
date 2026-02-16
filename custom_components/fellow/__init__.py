@@ -31,14 +31,18 @@ def _get_coordinator(hass: HomeAssistant) -> FellowAidenDataUpdateCoordinator:
     """
     entries = hass.config_entries.async_entries(DOMAIN)
     if not entries:
-        raise ServiceValidationError("No Fellow Aiden integrations configured")
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="no_integrations",
+        )
 
     for entry in entries:
         if entry.state is ConfigEntryState.LOADED:
             return cast(FellowAidenConfigEntry, entry).runtime_data
 
     raise ServiceValidationError(
-        "Fellow Aiden integration is not loaded; check Settings > Integrations"
+        translation_domain=DOMAIN,
+        translation_key="not_loaded",
     )
 
 
@@ -91,17 +95,28 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         except ValueError as exc:
             raise ServiceValidationError(str(exc)) from exc
         except Exception as exc:
-            raise HomeAssistantError(f"Failed to create profile: {exc}") from exc
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="create_profile_failed",
+                translation_placeholders={"error": str(exc)},
+            ) from exc
 
     async def handle_delete_profile(call: ServiceCall) -> None:
         coordinator = _get_coordinator(hass)
         pid = call.data.get("profile_id")
         if not pid:
-            raise ServiceValidationError("profile_id is required")
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="profile_id_required",
+            )
         try:
             await coordinator.async_delete_profile(pid)
         except Exception as exc:
-            raise HomeAssistantError(f"Failed to delete profile: {exc}") from exc
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="delete_profile_failed",
+                translation_placeholders={"error": str(exc)},
+            ) from exc
 
     async def handle_list_profiles(call: ServiceCall) -> ServiceResponse:
         coordinator = _get_coordinator(hass)
@@ -122,12 +137,18 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     async def handle_get_profile_details(call: ServiceCall) -> ServiceResponse:
         profile_input = call.data.get("profile_name") or call.data.get("profile_id")
         if not profile_input:
-            raise ServiceValidationError("Provide profile_name or profile_id")
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="provide_profile_id_or_name",
+            )
 
         coordinator = _get_coordinator(hass)
         data = coordinator.data
         if not data or "profiles" not in data:
-            raise ServiceValidationError("No profiles available")
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="no_profiles",
+            )
 
         target = next(
             (
@@ -140,9 +161,12 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         if not target:
             names = [p.get("title", "Unnamed") for p in data["profiles"]]
             raise ServiceValidationError(
-                "Profile '{}' not found. Available: {}".format(
-                    profile_input, ", ".join(names)
-                )
+                translation_domain=DOMAIN,
+                translation_key="profile_not_found",
+                translation_placeholders={
+                    "profile": profile_input,
+                    "available": ", ".join(names),
+                },
             )
         return {"profile": target}
 
@@ -150,7 +174,10 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         coordinator = _get_coordinator(hass)
         profile_input = call.data.get("profileName") or call.data.get("profileId")
         if not profile_input:
-            raise ServiceValidationError("Provide profileName or profileId")
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="provide_schedule_profile",
+            )
 
         profile_id = _profile_id_by_name(coordinator, profile_input)
         if not profile_id:
@@ -159,19 +186,27 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             else:
                 names = _available_profile_names(coordinator)
                 raise ServiceValidationError(
-                    "Profile '{}' not found. Available: {}".format(
-                        profile_input, ", ".join(names)
-                    )
+                    translation_domain=DOMAIN,
+                    translation_key="profile_not_found",
+                    translation_placeholders={
+                        "profile": profile_input,
+                        "available": ", ".join(names),
+                    },
                 )
 
         time_str: str | None = call.data.get("time")
         if not time_str:
-            raise ServiceValidationError("'time' is required")
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="time_required",
+            )
         try:
             time_obj = time.fromisoformat(time_str)
         except ValueError as exc:
             raise ServiceValidationError(
-                f"Bad time format: '{time_str}'. Use HH:MM:SS."
+                translation_domain=DOMAIN,
+                translation_key="bad_time_format",
+                translation_placeholders={"time_str": time_str},
             ) from exc
 
         seconds = time_obj.hour * 3600 + time_obj.minute * 60 + time_obj.second
@@ -195,28 +230,46 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         except ValueError as exc:
             raise ServiceValidationError(str(exc)) from exc
         except Exception as exc:
-            raise HomeAssistantError(f"Failed to create schedule: {exc}") from exc
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="create_schedule_failed",
+                translation_placeholders={"error": str(exc)},
+            ) from exc
 
     async def handle_delete_schedule(call: ServiceCall) -> None:
         coordinator = _get_coordinator(hass)
         sid = call.data.get("schedule_id")
         if not sid:
-            raise ServiceValidationError("schedule_id is required")
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="schedule_id_required",
+            )
         try:
             await coordinator.async_delete_schedule(sid)
         except Exception as exc:
-            raise HomeAssistantError(f"Failed to delete schedule: {exc}") from exc
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="delete_schedule_failed",
+                translation_placeholders={"error": str(exc)},
+            ) from exc
 
     async def handle_toggle_schedule(call: ServiceCall) -> None:
         coordinator = _get_coordinator(hass)
         sid = call.data.get("schedule_id")
         if not sid:
-            raise ServiceValidationError("schedule_id is required")
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="schedule_id_required",
+            )
         enabled = call.data.get("enabled", True)
         try:
             await coordinator.async_toggle_schedule(sid, enabled)
         except Exception as exc:
-            raise HomeAssistantError(f"Failed to toggle schedule: {exc}") from exc
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="toggle_schedule_failed",
+                translation_placeholders={"error": str(exc)},
+            ) from exc
 
     async def handle_list_schedules(call: ServiceCall) -> ServiceResponse:
         coordinator = _get_coordinator(hass)
@@ -248,7 +301,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             await coordinator.history_manager.async_reset_water_tracking(current_total)
         except Exception as exc:
             raise HomeAssistantError(
-                f"Failed to reset water tracking: {exc}"
+                translation_domain=DOMAIN,
+                translation_key="reset_water_failed",
+                translation_placeholders={"error": str(exc)},
             ) from exc
 
     async def handle_refresh_and_log_data(call: ServiceCall) -> ServiceResponse:
