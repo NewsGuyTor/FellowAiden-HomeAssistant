@@ -101,7 +101,7 @@
       "name": "Create brew profile",
       "description": "Create a new brew profile on the Fellow Aiden.",
       "fields": {
-        "profileType": {
+        "profile_type": {
           "name": "Profile type",
           "description": "Numeric profile type."
         },
@@ -113,51 +113,51 @@
           "name": "Brew ratio",
           "description": "Coffee-to-water ratio (14-20 in 0.5 steps)."
         },
-        "bloomEnabled": {
+        "bloom_enabled": {
           "name": "Bloom enabled",
           "description": "Whether to use a bloom phase."
         },
-        "bloomRatio": {
+        "bloom_ratio": {
           "name": "Bloom ratio",
           "description": "Water used in bloom relative to coffee weight (1.0-3.0)."
         },
-        "bloomDuration": {
+        "bloom_duration": {
           "name": "Bloom duration",
           "description": "Bloom phase duration in seconds (1-120)."
         },
-        "bloomTemperature": {
+        "bloom_temperature": {
           "name": "Bloom temperature",
           "description": "Bloom phase temperature in Celsius (50-99)."
         },
-        "ssPulsesEnabled": {
+        "ss_pulses_enabled": {
           "name": "Single serve pulses enabled",
           "description": "Enable pulses for single serve brewing."
         },
-        "ssPulsesNumber": {
+        "ss_pulses_number": {
           "name": "Single serve pulse count",
           "description": "Number of single serve pulses (1-10)."
         },
-        "ssPulsesInterval": {
+        "ss_pulses_interval": {
           "name": "Single serve pulse interval",
           "description": "Seconds between single serve pulses (5-60)."
         },
-        "ssPulseTemperatures": {
+        "ss_pulse_temperatures": {
           "name": "Single serve pulse temperatures",
           "description": "Temperature list for each single serve pulse, e.g. [96, 97, 98]."
         },
-        "batchPulsesEnabled": {
+        "batch_pulses_enabled": {
           "name": "Batch pulses enabled",
           "description": "Enable batch brewing pulses."
         },
-        "batchPulsesNumber": {
+        "batch_pulses_number": {
           "name": "Batch pulse count",
           "description": "Number of batch pulses (1-10)."
         },
-        "batchPulsesInterval": {
+        "batch_pulses_interval": {
           "name": "Batch pulse interval",
           "description": "Seconds between batch pulses (5-60)."
         },
-        "batchPulseTemperatures": {
+        "batch_pulse_temperatures": {
           "name": "Batch pulse temperatures",
           "description": "Temperature list for each batch pulse, e.g. [96, 97]."
         }

@@ -74,21 +74,21 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     async def handle_create_profile(call: ServiceCall) -> None:
         coordinator = _get_coordinator(hass)
         data = {
-            "profileType": call.data.get("profileType", DEFAULT_PROFILE_TYPE),
+            "profileType": call.data.get("profile_type", DEFAULT_PROFILE_TYPE),
             "title": call.data["title"],
             "ratio": call.data["ratio"],
-            "bloomEnabled": call.data["bloomEnabled"],
-            "bloomRatio": call.data["bloomRatio"],
-            "bloomDuration": call.data["bloomDuration"],
-            "bloomTemperature": call.data["bloomTemperature"],
-            "ssPulsesEnabled": call.data["ssPulsesEnabled"],
-            "ssPulsesNumber": call.data["ssPulsesNumber"],
-            "ssPulsesInterval": call.data["ssPulsesInterval"],
-            "ssPulseTemperatures": call.data["ssPulseTemperatures"],
-            "batchPulsesEnabled": call.data["batchPulsesEnabled"],
-            "batchPulsesNumber": call.data["batchPulsesNumber"],
-            "batchPulsesInterval": call.data["batchPulsesInterval"],
-            "batchPulseTemperatures": call.data["batchPulseTemperatures"],
+            "bloomEnabled": call.data["bloom_enabled"],
+            "bloomRatio": call.data["bloom_ratio"],
+            "bloomDuration": call.data["bloom_duration"],
+            "bloomTemperature": call.data["bloom_temperature"],
+            "ssPulsesEnabled": call.data["ss_pulses_enabled"],
+            "ssPulsesNumber": call.data["ss_pulses_number"],
+            "ssPulsesInterval": call.data["ss_pulses_interval"],
+            "ssPulseTemperatures": call.data["ss_pulse_temperatures"],
+            "batchPulsesEnabled": call.data["batch_pulses_enabled"],
+            "batchPulsesNumber": call.data["batch_pulses_number"],
+            "batchPulsesInterval": call.data["batch_pulses_interval"],
+            "batchPulseTemperatures": call.data["batch_pulse_temperatures"],
         }
         try:
             await coordinator.async_create_profile(data)
@@ -176,7 +176,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     async def handle_create_schedule(call: ServiceCall) -> None:
         coordinator = _get_coordinator(hass)
-        profile_input = call.data.get("profileName") or call.data.get("profileId")
+        profile_input = call.data.get("profile_name") or call.data.get("profile_id")
         if not profile_input:
             raise ServiceValidationError(
                 translation_domain=DOMAIN,
@@ -226,7 +226,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             ],
             "secondFromStartOfTheDay": seconds,
             "enabled": call.data.get("enabled", True),
-            "amountOfWater": call.data["amountOfWater"],
+            "amountOfWater": call.data["amount_of_water"],
             "profileId": profile_id,
         }
         try:

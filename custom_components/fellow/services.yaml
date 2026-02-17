@@ -2,7 +2,7 @@ create_profile:
   name: "Create Brew Profile"
   description: "Create a new brew profile on the Fellow Aiden device."
   fields:
-    profileType:
+    profile_type:
       name: "Profile Type"
       description: "Numeric profile type"
       required: false
@@ -31,14 +31,14 @@ create_profile:
           max: 20
           step: 0.5
           mode: box
-    bloomEnabled:
+    bloom_enabled:
       name: "Bloom Enabled"
       description: "Should the bloom phase be used?"
       required: true
       example: true
       selector:
         boolean:
-    bloomRatio:
+    bloom_ratio:
       name: "Bloom Ratio"
       description: "Amount of water used in bloom relative to coffee weight (1.0–3.0)."
       required: true
@@ -49,7 +49,7 @@ create_profile:
           max: 3
           step: 0.5
           mode: box
-    bloomDuration:
+    bloom_duration:
       name: "Bloom Duration (seconds)"
       description: "Duration of bloom phase, 1–120 seconds."
       required: true
@@ -60,7 +60,7 @@ create_profile:
           max: 120
           step: 1
           mode: box
-    bloomTemperature:
+    bloom_temperature:
       name: "Bloom Temperature (°C)"
       description: "Temperature for bloom phase, 50–99°C."
       required: true
@@ -72,14 +72,14 @@ create_profile:
           step: 1
           unit_of_measurement: "°C"
           mode: box
-    ssPulsesEnabled:
+    ss_pulses_enabled:
       name: "Single Serve Pulses Enabled"
       description: "Enable pulses for Single Serve brewing?"
       required: true
       example: true
       selector:
         boolean:
-    ssPulsesNumber:
+    ss_pulses_number:
       name: "Single Serve Pulses Number"
       description: "How many pulses for Single Serve brewing? (1–10)."
       required: true
@@ -90,7 +90,7 @@ create_profile:
           max: 10
           step: 1
           mode: box
-    ssPulsesInterval:
+    ss_pulses_interval:
       name: "Single Serve Pulses Interval (seconds)"
       description: "Time between Single Serve pulses, 5–60."
       required: true
@@ -101,21 +101,21 @@ create_profile:
           max: 60
           step: 1
           mode: box
-    ssPulseTemperatures:
+    ss_pulse_temperatures:
       name: "Single Serve Pulse Temperatures (°C)"
       description: "Temperatures for each Single Serve pulse. Accepts comma-separated integers or JSON array (e.g., 96,97,98 or [96,97,98]). Values in °C (50–99)."
       required: true
       example: "96,97,98"
       selector:
         text:
-    batchPulsesEnabled:
+    batch_pulses_enabled:
       name: "Batch Pulses Enabled"
       description: "Enable batch pulses?"
       required: true
       example: true
       selector:
         boolean:
-    batchPulsesNumber:
+    batch_pulses_number:
       name: "Batch Pulses Number"
       description: "Number of batch pulses (1–10)."
       required: true
@@ -126,7 +126,7 @@ create_profile:
           max: 10
           step: 1
           mode: box
-    batchPulsesInterval:
+    batch_pulses_interval:
       name: "Batch Pulses Interval (seconds)"
       description: "Time between batch pulses, 5–60."
       required: true
@@ -137,7 +137,7 @@ create_profile:
           max: 60
           step: 1
           mode: box
-    batchPulseTemperatures:
+    batch_pulse_temperatures:
       name: "Batch Pulse Temperatures (°C)"
       description: "A list of temperatures for each batch pulse (e.g. `[96, 97]`). Values in °C (50–99)."
       required: true
@@ -217,7 +217,7 @@ create_schedule:
       example: "07:30:00"
       selector:
         time:
-    amountOfWater:
+    amount_of_water:
       name: "Water Amount (mL)"
       description: "Amount of water to use for brewing (150-1500 mL)."
       required: true
@@ -229,16 +229,16 @@ create_schedule:
           step: 1
           unit_of_measurement: "mL"
           mode: box
-    profileName:
+    profile_name:
       name: "Profile Name"
-      description: "Name of the brew profile to use. Either profileName or profileId must be provided (profileName takes precedence). Find names in the 'Fellow Aiden Profiles' dropdown."
+      description: "Name of the brew profile to use. Either profile_name or profile_id must be provided (profile_name takes precedence). Find names in the 'Fellow Aiden Profiles' dropdown."
       required: false
       example: "My Morning Coffee"
       selector:
         text:
-    profileId:
+    profile_id:
       name: "Profile ID (Alternative)"
-      description: "ID of the brew profile to use (e.g. 'p1'). Either profileName or profileId must be provided (profileName takes precedence)."
+      description: "ID of the brew profile to use (e.g. 'p1'). Either profile_name or profile_id must be provided (profile_name takes precedence)."
       required: false
       example: "p1"
       selector:
