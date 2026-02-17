@@ -1,18 +1,15 @@
 """Select entity to list brew profiles from Fellow Aiden."""
 from __future__ import annotations
 
-import logging
-
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import FellowAidenConfigEntry
+from .const import DOMAIN, FellowAidenConfigEntry
 from .coordinator import FellowAidenDataUpdateCoordinator
 from .base_entity import FellowAidenBaseEntity
-
-_LOGGER = logging.getLogger(__name__)
 
 PARALLEL_UPDATES = 0
 
@@ -77,8 +74,8 @@ class FellowAidenProfilesSelect(FellowAidenBaseEntity, SelectEntity):
         return data["profiles"][0].get("title", "Profile 1")
 
     async def async_select_option(self, option: str) -> None:
-        """No-op. The Fellow API doesn't support switching profiles remotely."""
-        _LOGGER.warning(
-            "Profile selection for '%s' ignored; the Fellow API doesn't support remote profile switching",
-            option,
+        """Raise error — the Fellow API doesn't support switching profiles remotely."""
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="profile_selection_not_supported",
         )

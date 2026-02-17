@@ -13,7 +13,10 @@ from homeassistant.core import (
     ServiceResponse,
     SupportsResponse,
 )
+import voluptuous as vol
+
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
 from .const import DOMAIN, PLATFORMS, DEFAULT_PROFILE_TYPE, FellowAidenConfigEntry
@@ -22,6 +25,39 @@ from .coordinator import FellowAidenDataUpdateCoordinator
 _LOGGER = logging.getLogger(__name__)
 
 PROFILE_ID_RE = re.compile(r"^(p|plocal)\d+$")
+
+CREATE_PROFILE_SCHEMA = vol.Schema({
+    vol.Optional("profile_type", default=DEFAULT_PROFILE_TYPE): vol.Coerce(int),
+    vol.Required("title"): cv.string,
+    vol.Required("ratio"): vol.Coerce(float),
+    vol.Required("bloom_enabled"): cv.boolean,
+    vol.Required("bloom_ratio"): vol.Coerce(float),
+    vol.Required("bloom_duration"): vol.Coerce(int),
+    vol.Required("bloom_temperature"): vol.Coerce(int),
+    vol.Required("ss_pulses_enabled"): cv.boolean,
+    vol.Required("ss_pulses_number"): vol.Coerce(int),
+    vol.Required("ss_pulses_interval"): vol.Coerce(int),
+    vol.Required("ss_pulse_temperatures"): cv.string,
+    vol.Required("batch_pulses_enabled"): cv.boolean,
+    vol.Required("batch_pulses_number"): vol.Coerce(int),
+    vol.Required("batch_pulses_interval"): vol.Coerce(int),
+    vol.Required("batch_pulse_temperatures"): cv.string,
+})
+
+CREATE_SCHEDULE_SCHEMA = vol.Schema({
+    vol.Optional("monday", default=False): cv.boolean,
+    vol.Optional("tuesday", default=False): cv.boolean,
+    vol.Optional("wednesday", default=False): cv.boolean,
+    vol.Optional("thursday", default=False): cv.boolean,
+    vol.Optional("friday", default=False): cv.boolean,
+    vol.Optional("saturday", default=False): cv.boolean,
+    vol.Optional("sunday", default=False): cv.boolean,
+    vol.Required("time"): cv.string,
+    vol.Required("amount_of_water"): vol.Coerce(int),
+    vol.Optional("profile_name"): cv.string,
+    vol.Optional("profile_id"): cv.string,
+    vol.Optional("enabled", default=True): cv.boolean,
+})
 
 
 def _get_coordinator(hass: HomeAssistant) -> FellowAidenDataUpdateCoordinator:
@@ -323,7 +359,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         return data if data else {"error": "No data available after refresh"}
 
     hass.services.async_register(
-        DOMAIN, "create_profile", handle_create_profile, schema=None
+        DOMAIN, "create_profile", handle_create_profile, schema=CREATE_PROFILE_SCHEMA
     )
     hass.services.async_register(
         DOMAIN, "delete_profile", handle_delete_profile, schema=None
@@ -343,7 +379,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         supports_response=SupportsResponse.ONLY,
     )
     hass.services.async_register(
-        DOMAIN, "create_schedule", handle_create_schedule, schema=None
+        DOMAIN, "create_schedule", handle_create_schedule, schema=CREATE_SCHEDULE_SCHEMA
     )
     hass.services.async_register(
         DOMAIN, "delete_schedule", handle_delete_schedule, schema=None

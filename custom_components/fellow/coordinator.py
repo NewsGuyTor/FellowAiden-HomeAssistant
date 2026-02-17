@@ -158,7 +158,7 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         try:
             result = await self.hass.async_add_executor_job(self.api.create_profile, profile_data)
             _LOGGER.debug("Profile creation result: %s", result)
-        except Exception as e:
+        except Exception:
             _LOGGER.exception("Profile creation failed")
             raise
         self._next_refresh_verbose = True
@@ -174,7 +174,7 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 self.api.delete_profile_by_id, profile_id
             )
             _LOGGER.debug("Profile deletion result: %s", result)
-        except Exception as e:
+        except Exception:
             _LOGGER.exception("Profile deletion failed")
             raise
         self._next_refresh_verbose = True
@@ -190,7 +190,7 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 self.api.create_schedule, schedule_data
             )
             _LOGGER.debug("Schedule creation result: %s", result)
-        except Exception as e:
+        except Exception:
             _LOGGER.exception("Schedule creation failed")
             raise
         self._next_refresh_verbose = True
@@ -206,7 +206,7 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 self.api.delete_schedule_by_id, schedule_id
             )
             _LOGGER.debug("Schedule deletion result: %s", result)
-        except Exception as e:
+        except Exception:
             _LOGGER.exception("Schedule deletion failed")
             raise
         self._next_refresh_verbose = True
@@ -222,7 +222,7 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 self.api.toggle_schedule, schedule_id, enabled
             )
             _LOGGER.debug("Schedule toggle result: %s", result)
-        except Exception as e:
+        except Exception:
             _LOGGER.exception("Schedule toggle failed")
             raise
         self._next_refresh_verbose = True

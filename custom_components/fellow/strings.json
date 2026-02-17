@@ -283,6 +283,9 @@
     },
     "reset_water_failed": {
       "message": "Failed to reset water tracking: {error}"
+    },
+    "profile_selection_not_supported": {
+      "message": "The Fellow API does not support remote profile switching."
     }
   }
 }

@@ -148,7 +148,7 @@ class AidenSensor(FellowAidenBaseEntity, SensorEntity):
 
         # Apply unit conversion for water volume if applicable
         if self._key == "totalWaterVolumeL" and value is not None:
-            return round(value / 1000.0, 2)  # Convert ml to liters
+            return round(value / 1000.0, 2)  # API field is misnamed; value is in mL
 
         return value
 
@@ -199,10 +199,11 @@ class AidenBrewTimeSensor(FellowAidenBaseEntity, SensorEntity):
         self._key = key
         self._attr_translation_key = translation_key
         self._attr_unique_id = f"{entry.entry_id}-{key}"
+        self._attr_device_class = SensorDeviceClass.TIMESTAMP
 
     @property
-    def native_value(self) -> str | None:
-        """Convert and return the brew time as a formatted datetime string."""
+    def native_value(self) -> datetime | None:
+        """Return the brew time as a timezone-aware datetime."""
         from homeassistant.util import dt as dt_util
 
         data = self.coordinator.data or {}
@@ -213,18 +214,13 @@ class AidenBrewTimeSensor(FellowAidenBaseEntity, SensorEntity):
             return None
 
         try:
-            # Convert the timestamp string to an integer
             timestamp_int = int(timestamp_str)
-            # Avoid epoch time
             if timestamp_int == 0:
                 return None
-            # Convert Unix timestamp to a timezone-aware datetime object
-            brew_datetime = dt_util.as_local(dt_util.utc_from_timestamp(timestamp_int))
-            # Validate timestamp (e.g., after minimum valid year)
+            brew_datetime = dt_util.utc_from_timestamp(timestamp_int)
             if brew_datetime.year < MIN_VALID_YEAR:
                 return None
-            # Format datetime for display (ISO8601 format)
-            return brew_datetime.strftime("%Y-%m-%d %H:%M:%S")
+            return brew_datetime
         except (ValueError, TypeError, OSError, OverflowError) as error:
             _LOGGER.error("Error parsing %s: %s", self._key, error)
             return None
@@ -633,7 +629,19 @@ class AidenCurrentProfileSensor(FellowAidenBaseEntity, SensorEntity):
         """Detect the current profile without side effects.
 
         Returns (profile_name, detection_method, confidence).
+        Cached per coordinator data update to avoid duplicate computation.
         """
+        data_id = id(self.coordinator.data)
+        if getattr(self, "_cache_id", None) == data_id:
+            return self._cache_result
+
+        result = self._compute_current_profile()
+        self._cache_id = data_id
+        self._cache_result = result
+        return result
+
+    def _compute_current_profile(self) -> tuple[str | None, str, str]:
+        """Run the actual detection logic."""
         data = self.coordinator.data
 
         if data and "profiles" in data and data["profiles"]:
