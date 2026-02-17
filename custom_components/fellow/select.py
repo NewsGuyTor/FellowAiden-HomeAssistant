@@ -78,7 +78,7 @@ class FellowAidenProfilesSelect(FellowAidenBaseEntity, SelectEntity):
 
     async def async_select_option(self, option: str) -> None:
         """No-op. The Fellow API doesn't support switching profiles remotely."""
-        _LOGGER.info(
+        _LOGGER.warning(
             "Profile selection for '%s' ignored; the Fellow API doesn't support remote profile switching",
             option,
         )

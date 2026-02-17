@@ -77,7 +77,8 @@ class FellowAidenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
         if user_input is not None:
             password = user_input["password"]
-            assert self._reauth_email is not None
+            if self._reauth_email is None:
+                return self.async_abort(reason="unknown")
             try:
                 await self.hass.async_add_executor_job(
                     _try_login, self._reauth_email, password

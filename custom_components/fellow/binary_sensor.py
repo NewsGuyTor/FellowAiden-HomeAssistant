@@ -7,7 +7,6 @@ from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
     BinarySensorDeviceClass,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -58,7 +57,7 @@ class FellowAidenBinarySensor(FellowAidenBaseEntity, BinarySensorEntity):
     def __init__(
         self,
         coordinator: FellowAidenDataUpdateCoordinator,
-        entry: ConfigEntry,
+        entry: FellowAidenConfigEntry,
         key: str,
         translation_key: str,
         device_class: BinarySensorDeviceClass | None,

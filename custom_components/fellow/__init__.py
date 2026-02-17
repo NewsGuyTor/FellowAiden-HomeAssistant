@@ -93,7 +93,11 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         try:
             await coordinator.async_create_profile(data)
         except ValueError as exc:
-            raise ServiceValidationError(str(exc)) from exc
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="create_profile_failed",
+                translation_placeholders={"error": str(exc)},
+            ) from exc
         except Exception as exc:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
@@ -228,7 +232,11 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         try:
             await coordinator.async_create_schedule(schedule_data)
         except ValueError as exc:
-            raise ServiceValidationError(str(exc)) from exc
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="create_schedule_failed",
+                translation_placeholders={"error": str(exc)},
+            ) from exc
         except Exception as exc:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
@@ -280,12 +288,13 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     async def handle_debug_water_usage(call: ServiceCall) -> ServiceResponse:
         coordinator = _get_coordinator(hass)
-        history = coordinator.history_manager._water_usage_history
         device_config = coordinator.data.get("device_config", {})
         return {
-            "water_usage_history": history,
+            "water_usage_record_count": coordinator.history_manager.get_water_usage_count(),
             "current_device_total_ml": device_config.get("totalWaterVolumeL", 0),
-            "last_tracked_total_ml": coordinator.history_manager._last_total_water,
+            "water_usage_today_l": coordinator.history_manager.get_water_usage_for_period(1),
+            "water_usage_week_l": coordinator.history_manager.get_water_usage_for_period(7),
+            "water_usage_month_l": coordinator.history_manager.get_water_usage_for_period(30),
         }
 
     async def handle_reset_water_tracking(call: ServiceCall) -> None:

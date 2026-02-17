@@ -234,34 +234,6 @@ automation:
 
 ---
 
-## Services
-
-### Brew Profile Management
-
-- **`fellow.create_profile`**: Create new brew profiles with detailed parameters (ratio, bloom, pulses, etc.)
-- **`fellow.delete_profile`**: Delete profiles by ID
-- **`fellow.list_profiles`**: List all available profiles with their names and IDs
-- **`fellow.get_profile_details`**: Get detailed information about a specific profile
-
-### Schedule Management
-
-- **`fellow.create_schedule`**: Create brewing schedules with day/time configurations
-- **`fellow.delete_schedule`**: Delete schedules by ID
-- **`fellow.toggle_schedule`**: Enable or disable existing schedules
-- **`fellow.list_schedules`**: List all current schedules with full details
-
-### Brewing Operations
-
-- *No direct start brew service (use device controls or schedules).*
-
-### Analytics & Debugging
-
-- **`fellow.reset_water_tracking`**: Reset water usage tracking baseline
-- **`fellow.debug_water_usage`**: Show detailed water usage history
-- **`fellow.refresh_and_log_data`**: Manually refresh and log complete API response
-
----
-
 ## FAQ & Troubleshooting
 
 1. **"Device not found"** -- Make sure you have a Fellow Aiden brewer linked to the account you used during setup.

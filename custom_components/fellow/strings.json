@@ -255,7 +255,7 @@
       "message": "Provide profile_name or profile_id."
     },
     "provide_schedule_profile": {
-      "message": "Provide profileName or profileId."
+      "message": "Provide a profile name or profile ID."
     },
     "schedule_id_required": {
       "message": "schedule_id is required."
