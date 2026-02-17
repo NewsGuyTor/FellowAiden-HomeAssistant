@@ -74,6 +74,9 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # If UpdateFailed was already raised, propagate it
             _LOGGER.exception("UpdateFailed exception during data update")
             raise
+        except ConfigEntryAuthFailed:
+            _LOGGER.warning("Authentication failed, triggering reauth flow")
+            raise
         except Exception as err:
             _LOGGER.exception("Unexpected error during data update: %s", err)
             raise UpdateFailed(f"Unexpected error: {err}") from err
@@ -156,7 +159,7 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             result = await self.hass.async_add_executor_job(self.api.create_profile, profile_data)
             _LOGGER.debug("Profile creation result: %s", result)
         except Exception as e:
-            _LOGGER.exception("Profile creation failed: %s", e)
+            _LOGGER.exception("Profile creation failed")
             raise
         self._next_refresh_verbose = True
         await self.async_request_refresh()
@@ -172,7 +175,7 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
             _LOGGER.debug("Profile deletion result: %s", result)
         except Exception as e:
-            _LOGGER.exception("Profile deletion failed: %s", e)
+            _LOGGER.exception("Profile deletion failed")
             raise
         self._next_refresh_verbose = True
         await self.async_request_refresh()
@@ -188,7 +191,7 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
             _LOGGER.debug("Schedule creation result: %s", result)
         except Exception as e:
-            _LOGGER.exception("Schedule creation failed: %s", e)
+            _LOGGER.exception("Schedule creation failed")
             raise
         self._next_refresh_verbose = True
         await self.async_request_refresh()
@@ -204,7 +207,7 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
             _LOGGER.debug("Schedule deletion result: %s", result)
         except Exception as e:
-            _LOGGER.exception("Schedule deletion failed: %s", e)
+            _LOGGER.exception("Schedule deletion failed")
             raise
         self._next_refresh_verbose = True
         await self.async_request_refresh()
@@ -220,7 +223,7 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
             _LOGGER.debug("Schedule toggle result: %s", result)
         except Exception as e:
-            _LOGGER.exception("Schedule toggle failed: %s", e)
+            _LOGGER.exception("Schedule toggle failed")
             raise
         self._next_refresh_verbose = True
         await self.async_request_refresh()

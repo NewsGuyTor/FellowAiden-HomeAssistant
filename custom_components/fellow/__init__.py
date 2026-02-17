@@ -288,7 +288,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     async def handle_debug_water_usage(call: ServiceCall) -> ServiceResponse:
         coordinator = _get_coordinator(hass)
-        device_config = coordinator.data.get("device_config", {})
+        device_config = (coordinator.data or {}).get("device_config", {})
         return {
             "water_usage_record_count": coordinator.history_manager.get_water_usage_count(),
             "current_device_total_ml": device_config.get("totalWaterVolumeL", 0),
@@ -299,7 +299,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     async def handle_reset_water_tracking(call: ServiceCall) -> None:
         coordinator = _get_coordinator(hass)
-        device_config = coordinator.data.get("device_config", {})
+        device_config = (coordinator.data or {}).get("device_config", {})
         current_total = device_config.get("totalWaterVolumeL", 0)
         _LOGGER.info(
             "Resetting water tracking baseline to %d ml (%.2f L)",

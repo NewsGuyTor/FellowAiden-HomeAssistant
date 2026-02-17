@@ -140,7 +140,10 @@ class AidenSensor(FellowAidenBaseEntity, SensorEntity):
     @property
     def native_value(self) -> Any:
         """Retrieve and process the sensor's value."""
-        device_config = self.coordinator.data.get("device_config", {})
+        data = self.coordinator.data
+        if not data:
+            return None
+        device_config = data.get("device_config", {})
         value = device_config.get(self._key)
 
         # Apply unit conversion for water volume if applicable
@@ -245,7 +248,10 @@ class AidenLastBrewDurationSensor(FellowAidenBaseEntity, SensorEntity):
     @property
     def native_value(self) -> int | None:
         """Compute and return the duration of the last brew cycle."""
-        device_config = self.coordinator.data.get("device_config", {})
+        data = self.coordinator.data
+        if not data:
+            return None
+        device_config = data.get("device_config", {})
         start_time_str = device_config.get("brewStartTime")
         end_time_str = device_config.get("brewEndTime")
 
@@ -337,7 +343,10 @@ class AidenLastBrewTimeSensor(FellowAidenBaseEntity, SensorEntity):
             return historical_time
             
         # Fallback to device data
-        device_config = self.coordinator.data.get("device_config", {})
+        data = self.coordinator.data
+        if not data:
+            return None
+        device_config = data.get("device_config", {})
         end_time_str = device_config.get("brewEndTime")
 
         if not end_time_str or end_time_str == "0":
@@ -368,7 +377,7 @@ class AidenTotalWaterTodaySensor(FellowAidenBaseEntity, SensorEntity):
         self._attr_unique_id = f"{entry.entry_id}-total_water_today"
         self._attr_native_unit_of_measurement = UnitOfVolume.LITERS
         self._attr_device_class = SensorDeviceClass.VOLUME
-        self._attr_state_class = SensorStateClass.TOTAL_INCREASING
+        self._attr_state_class = SensorStateClass.MEASUREMENT
 
     @property
     def native_value(self) -> float | None:
@@ -409,7 +418,7 @@ class AidenTotalWaterWeekSensor(FellowAidenBaseEntity, SensorEntity):
         self._attr_unique_id = f"{entry.entry_id}-total_water_week"
         self._attr_native_unit_of_measurement = UnitOfVolume.LITERS
         self._attr_device_class = SensorDeviceClass.VOLUME
-        self._attr_state_class = SensorStateClass.TOTAL_INCREASING
+        self._attr_state_class = SensorStateClass.MEASUREMENT
 
     @property
     def native_value(self) -> float | None:
@@ -452,7 +461,7 @@ class AidenTotalWaterMonthSensor(FellowAidenBaseEntity, SensorEntity):
         self._attr_unique_id = f"{entry.entry_id}-total_water_month"
         self._attr_native_unit_of_measurement = UnitOfVolume.LITERS
         self._attr_device_class = SensorDeviceClass.VOLUME
-        self._attr_state_class = SensorStateClass.TOTAL_INCREASING
+        self._attr_state_class = SensorStateClass.MEASUREMENT
 
     @property
     def native_value(self) -> float | None:
@@ -504,7 +513,10 @@ class AidenAverageBrewDurationSensor(FellowAidenBaseEntity, SensorEntity):
             return historical_avg
             
         # Fallback to last brew duration if no historical data
-        device_config = self.coordinator.data.get("device_config", {})
+        data = self.coordinator.data
+        if not data:
+            return None
+        device_config = data.get("device_config", {})
         start_time_str = device_config.get("brewStartTime")
         end_time_str = device_config.get("brewEndTime")
 

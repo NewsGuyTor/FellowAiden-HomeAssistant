@@ -65,7 +65,7 @@ class FellowAidenProfilesSelect(FellowAidenBaseEntity, SelectEntity):
                     None,
                 )
                 if selected_profile:
-                    return selected_profile["title"]
+                    return selected_profile.get("title", "Selected Profile")
 
         default_profile = next(
             (p for p in data["profiles"] if p.get("isDefaultProfile")),
