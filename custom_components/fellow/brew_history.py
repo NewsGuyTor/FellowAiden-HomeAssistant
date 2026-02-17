@@ -208,6 +208,9 @@ class BrewHistoryManager:
         for record in self._brew_history:
             try:
                 ts = datetime.fromisoformat(record["timestamp"])
+                # Ensure timezone awareness for comparison
+                if ts.tzinfo is None:
+                    ts = dt_util.as_local(ts)
                 timestamps.append(ts)
             except (ValueError, KeyError):
                 continue
