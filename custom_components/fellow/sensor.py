@@ -373,7 +373,7 @@ class AidenTotalWaterTodaySensor(FellowAidenBaseEntity, SensorEntity):
         self._attr_unique_id = f"{entry.entry_id}-total_water_today"
         self._attr_native_unit_of_measurement = UnitOfVolume.LITERS
         self._attr_device_class = SensorDeviceClass.VOLUME
-        self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._attr_state_class = SensorStateClass.TOTAL
 
     @property
     def native_value(self) -> float | None:
@@ -414,7 +414,7 @@ class AidenTotalWaterWeekSensor(FellowAidenBaseEntity, SensorEntity):
         self._attr_unique_id = f"{entry.entry_id}-total_water_week"
         self._attr_native_unit_of_measurement = UnitOfVolume.LITERS
         self._attr_device_class = SensorDeviceClass.VOLUME
-        self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._attr_state_class = SensorStateClass.TOTAL
 
     @property
     def native_value(self) -> float | None:
@@ -457,7 +457,7 @@ class AidenTotalWaterMonthSensor(FellowAidenBaseEntity, SensorEntity):
         self._attr_unique_id = f"{entry.entry_id}-total_water_month"
         self._attr_native_unit_of_measurement = UnitOfVolume.LITERS
         self._attr_device_class = SensorDeviceClass.VOLUME
-        self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._attr_state_class = SensorStateClass.TOTAL
 
     @property
     def native_value(self) -> float | None:
