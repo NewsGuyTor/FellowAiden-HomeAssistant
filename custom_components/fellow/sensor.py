@@ -12,6 +12,7 @@ from homeassistant.const import UnitOfTime, UnitOfVolume
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN, TIMESTAMP_2024_01_01, MIN_VALID_YEAR, MIN_HISTORICAL_DATA_FOR_ACCURACY, FellowAidenConfigEntry
 from .coordinator import FellowAidenDataUpdateCoordinator
@@ -204,8 +205,6 @@ class AidenBrewTimeSensor(FellowAidenBaseEntity, SensorEntity):
     @property
     def native_value(self) -> datetime | None:
         """Return the brew time as a timezone-aware datetime."""
-        from homeassistant.util import dt as dt_util
-
         data = self.coordinator.data or {}
         device_config = data.get("device_config", {})
         timestamp_str = device_config.get(self._key)
@@ -328,8 +327,6 @@ class AidenLastBrewTimeSensor(FellowAidenBaseEntity, SensorEntity):
     @property
     def native_value(self) -> datetime | None:
         """Return the last brew completion time using historical data."""
-        from homeassistant.util import dt as dt_util
-        
         # Try historical data first, fallback to device data
         historical_time = self.coordinator.history_manager.get_last_brew_time()
         if historical_time:
@@ -723,7 +720,6 @@ class AidenCurrentProfileSensor(FellowAidenBaseEntity, SensorEntity):
                         continue
 
             if profiles_with_last_used:
-                from homeassistant.util import dt as dt_util
                 profiles_with_last_used.sort(key=lambda x: x[1], reverse=True)
                 most_recent_timestamp = profiles_with_last_used[0][1]
                 try:

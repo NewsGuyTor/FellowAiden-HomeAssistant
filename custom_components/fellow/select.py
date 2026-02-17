@@ -27,9 +27,9 @@ async def async_setup_entry(
 class FellowAidenProfilesSelect(FellowAidenBaseEntity, SelectEntity):
     """Dropdown showing available brew profiles.
 
-    Selecting a profile from the UI is not supported by the Fellow API,
-    so async_select_option logs a warning and does nothing. Use the
-    schedule or device controls to brew with a specific profile.
+    Selecting a profile from the UI is not supported by the Fellow API;
+    async_select_option raises HomeAssistantError. Use the schedule or
+    device controls to brew with a specific profile.
     """
 
     def __init__(self, coordinator: FellowAidenDataUpdateCoordinator, entry: ConfigEntry) -> None:

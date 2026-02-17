@@ -98,18 +98,35 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         try:
             _LOGGER.debug("Attempting to fetch device data.")
             self.api._FellowAiden__device()  # <-- HACK: Accessing private method
-        except Exception as e:
-            _LOGGER.error("Error fetching device data: %s. Attempting to re-authenticate.", e)
+        except Exception as device_err:
+            _LOGGER.error(
+                "Error fetching device data: %s. Attempting to re-authenticate.",
+                device_err,
+            )
             try:
                 _LOGGER.debug("Re-authenticating user.")
                 self.api._FellowAiden__auth()  # <-- HACK: Accessing private method
+            except Exception as auth_err:
+                _LOGGER.error("Re-authentication failed: %s", auth_err)
+                auth_message = str(auth_err).lower()
+                if "email or password incorrect" in auth_message:
+                    raise ConfigEntryAuthFailed(
+                        f"Authentication failed: {auth_err}"
+                    ) from auth_err
+                raise UpdateFailed(
+                    f"Re-authentication request failed: {auth_err}"
+                ) from auth_err
+
+            try:
                 _LOGGER.debug("Re-authentication successful. Re-fetching device data.")
                 self.api._FellowAiden__device()  # <-- HACK: Accessing private method
-            except Exception as auth_e:
-                _LOGGER.error("Re-authentication failed: %s", auth_e)
-                raise ConfigEntryAuthFailed(
-                    f"Authentication failed: {auth_e}"
-                ) from auth_e
+            except Exception as refresh_err:
+                _LOGGER.error(
+                    "Device refresh failed after re-authentication: %s", refresh_err
+                )
+                raise UpdateFailed(
+                    f"Device refresh failed after re-authentication: {refresh_err}"
+                ) from refresh_err
 
         brewer_name = self.api.get_display_name()
         profiles = self.api.get_profiles()
@@ -157,6 +174,8 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         _LOGGER.debug("Creating profile with data: %s", profile_data)
         try:
             result = await self.hass.async_add_executor_job(self.api.create_profile, profile_data)
+            if result is False:
+                raise ValueError("Profile creation validation failed")
             _LOGGER.debug("Profile creation result: %s", result)
         except Exception:
             _LOGGER.exception("Profile creation failed")

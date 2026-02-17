@@ -1,11 +1,13 @@
 """Fellow Aiden integration for Home Assistant."""
 from __future__ import annotations
 
+import json
 import logging
 import re
 from datetime import time
 from typing import cast
 
+from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import (
     HomeAssistant,
@@ -25,6 +27,60 @@ from .coordinator import FellowAidenDataUpdateCoordinator
 _LOGGER = logging.getLogger(__name__)
 
 PROFILE_ID_RE = re.compile(r"^(p|plocal)\d+$")
+REFRESH_RESPONSE_REDACT_KEYS = {
+    "email",
+    "password",
+    "id",
+    "wifiMacAddress",
+    "btMacAddress",
+    "wifiSSID",
+    "localIpAddress",
+}
+
+
+def _coerce_temperature_list(value: object) -> list[float]:
+    """Coerce profile pulse temperatures to a list of floats.
+
+    Accepts:
+    - JSON array string, e.g. "[96, 97, 98]"
+    - Comma-separated string, e.g. "96,97,98"
+    - Native list/tuple values
+    """
+    raw_items: list[object]
+
+    if isinstance(value, (list, tuple)):
+        raw_items = list(value)
+    elif isinstance(value, str):
+        stripped = value.strip()
+        if not stripped:
+            raise vol.Invalid("Temperature list cannot be empty")
+
+        if stripped.startswith("["):
+            try:
+                parsed = json.loads(stripped)
+            except json.JSONDecodeError as exc:
+                raise vol.Invalid("Invalid JSON temperature list") from exc
+            if not isinstance(parsed, list):
+                raise vol.Invalid("Temperature JSON must be a list")
+            raw_items = parsed
+        else:
+            raw_items = [item.strip() for item in stripped.split(",")]
+    else:
+        raise vol.Invalid("Temperature value must be a list or string")
+
+    if not raw_items:
+        raise vol.Invalid("Temperature list cannot be empty")
+
+    temperatures: list[float] = []
+    for item in raw_items:
+        if item == "":
+            raise vol.Invalid("Temperature list contains empty values")
+        try:
+            temperatures.append(float(item))
+        except (TypeError, ValueError) as exc:
+            raise vol.Invalid(f"Invalid temperature value: {item}") from exc
+
+    return temperatures
 
 CREATE_PROFILE_SCHEMA = vol.Schema({
     vol.Optional("profile_type", default=DEFAULT_PROFILE_TYPE): vol.Coerce(int),
@@ -37,11 +93,11 @@ CREATE_PROFILE_SCHEMA = vol.Schema({
     vol.Required("ss_pulses_enabled"): cv.boolean,
     vol.Required("ss_pulses_number"): vol.Coerce(int),
     vol.Required("ss_pulses_interval"): vol.Coerce(int),
-    vol.Required("ss_pulse_temperatures"): cv.string,
+    vol.Required("ss_pulse_temperatures"): _coerce_temperature_list,
     vol.Required("batch_pulses_enabled"): cv.boolean,
     vol.Required("batch_pulses_number"): vol.Coerce(int),
     vol.Required("batch_pulses_interval"): vol.Coerce(int),
-    vol.Required("batch_pulse_temperatures"): cv.string,
+    vol.Required("batch_pulse_temperatures"): _coerce_temperature_list,
 })
 
 CREATE_SCHEDULE_SCHEMA = vol.Schema({
@@ -63,6 +119,9 @@ CREATE_SCHEDULE_SCHEMA = vol.Schema({
 def _get_coordinator(hass: HomeAssistant) -> FellowAidenDataUpdateCoordinator:
     """Return the coordinator for the first loaded config entry.
 
+    When multiple entries are loaded, service calls target the first loaded
+    entry and a warning is logged.
+
     Raises ServiceValidationError when no entry is available or loaded.
     """
     entries = hass.config_entries.async_entries(DOMAIN)
@@ -72,14 +131,27 @@ def _get_coordinator(hass: HomeAssistant) -> FellowAidenDataUpdateCoordinator:
             translation_key="no_integrations",
         )
 
-    for entry in entries:
-        if entry.state is ConfigEntryState.LOADED:
-            return cast(FellowAidenConfigEntry, entry).runtime_data
+    loaded_entries = [
+        cast(FellowAidenConfigEntry, entry)
+        for entry in entries
+        if entry.state is ConfigEntryState.LOADED
+    ]
+    if not loaded_entries:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="not_loaded",
+        )
 
-    raise ServiceValidationError(
-        translation_domain=DOMAIN,
-        translation_key="not_loaded",
-    )
+    if len(loaded_entries) > 1:
+        loaded_entry_ids = ", ".join(entry.entry_id for entry in loaded_entries)
+        _LOGGER.warning(
+            "Multiple loaded %s entries detected (%s); using first loaded entry %s for service call",
+            DOMAIN,
+            loaded_entry_ids,
+            loaded_entries[0].entry_id,
+        )
+
+    return loaded_entries[0].runtime_data
 
 
 def _profile_id_by_name(
@@ -356,7 +428,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         coordinator._next_refresh_verbose = True
         await coordinator.async_request_refresh()
         data = coordinator.data
-        return data if data else {"error": "No data available after refresh"}
+        if not data:
+            return {"error": "No data available after refresh"}
+        return async_redact_data(data, REFRESH_RESPONSE_REDACT_KEYS)
 
     hass.services.async_register(
         DOMAIN, "create_profile", handle_create_profile, schema=CREATE_PROFILE_SCHEMA
