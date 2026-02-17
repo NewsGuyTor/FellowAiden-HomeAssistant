@@ -7,6 +7,7 @@ from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .fellow_aiden import FellowAiden
@@ -73,6 +74,9 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # If UpdateFailed was already raised, propagate it
             _LOGGER.exception("UpdateFailed exception during data update")
             raise
+        except ConfigEntryAuthFailed:
+            _LOGGER.warning("Authentication failed, triggering reauth flow")
+            raise
         except Exception as err:
             _LOGGER.exception("Unexpected error during data update: %s", err)
             raise UpdateFailed(f"Unexpected error: {err}") from err
@@ -94,16 +98,35 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         try:
             _LOGGER.debug("Attempting to fetch device data.")
             self.api._FellowAiden__device()  # <-- HACK: Accessing private method
-        except Exception as e:
-            _LOGGER.error("Error fetching device data: %s. Attempting to re-authenticate.", e)
+        except Exception as device_err:
+            _LOGGER.error(
+                "Error fetching device data: %s. Attempting to re-authenticate.",
+                device_err,
+            )
             try:
                 _LOGGER.debug("Re-authenticating user.")
                 self.api._FellowAiden__auth()  # <-- HACK: Accessing private method
+            except Exception as auth_err:
+                _LOGGER.error("Re-authentication failed: %s", auth_err)
+                auth_message = str(auth_err).lower()
+                if "email or password incorrect" in auth_message:
+                    raise ConfigEntryAuthFailed(
+                        f"Authentication failed: {auth_err}"
+                    ) from auth_err
+                raise UpdateFailed(
+                    f"Re-authentication request failed: {auth_err}"
+                ) from auth_err
+
+            try:
                 _LOGGER.debug("Re-authentication successful. Re-fetching device data.")
                 self.api._FellowAiden__device()  # <-- HACK: Accessing private method
-            except Exception as auth_e:
-                _LOGGER.error("Re-authentication failed: %s", auth_e)
-                raise UpdateFailed(f"Error updating data: {auth_e}") from auth_e
+            except Exception as refresh_err:
+                _LOGGER.error(
+                    "Device refresh failed after re-authentication: %s", refresh_err
+                )
+                raise UpdateFailed(
+                    f"Device refresh failed after re-authentication: {refresh_err}"
+                ) from refresh_err
 
         brewer_name = self.api.get_display_name()
         profiles = self.api.get_profiles()
@@ -112,19 +135,18 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         if verbose_logging:
             _LOGGER.info("=== Fellow Aiden API Response ===")
-            _LOGGER.info(f"Brewer name: {brewer_name}")
-            _LOGGER.info(f"Profiles ({len(profiles) if profiles else 0}): {profiles}")
-            _LOGGER.info(f"Device config: {device_config}")
-            _LOGGER.info(f"Schedules ({len(schedules) if schedules else 0}): {schedules}")
+            _LOGGER.info("Brewer name: %s", brewer_name)
+            _LOGGER.info("Profiles (%d): %s", len(profiles) if profiles else 0, profiles)
+            _LOGGER.info("Device config: %s", device_config)
+            _LOGGER.info("Schedules (%d): %s", len(schedules) if schedules else 0, schedules)
             _LOGGER.info("=== End API Response ===")
         else:
-            # Only log summary info during regular polling
-            _LOGGER.debug(f"Polled: {len(profiles) if profiles else 0} profiles, {len(schedules) if schedules else 0} schedules, device: {brewer_name}")
-
-        _LOGGER.debug(f"Fetched brewer name: {brewer_name}")
-        _LOGGER.debug(f"Fetched profiles: {profiles}")
-        _LOGGER.debug(f"Fetched device config: {device_config}")
-        _LOGGER.debug(f"Fetched schedules: {schedules}")
+            _LOGGER.debug(
+                "Polled: %d profiles, %d schedules, device: %s",
+                len(profiles) if profiles else 0,
+                len(schedules) if schedules else 0,
+                brewer_name,
+            )
 
         if not brewer_name or not device_config:
             _LOGGER.error("Incomplete data fetched from Fellow Aiden.")
@@ -138,7 +160,10 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "device_config": device_config,
             "schedules": schedules,
         }
-        _LOGGER.debug(f"Returning data with {len(profiles)} profiles, {len(schedules) if schedules else 0} schedules, and device config keys: {list(device_config.keys()) if device_config else 'None'}")
+        _LOGGER.debug(
+            "Returning data: %d profiles, %d schedules",
+            len(profiles) if profiles else 0, len(schedules) if schedules else 0,
+        )
         return result
 
 
@@ -149,9 +174,11 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         _LOGGER.debug("Creating profile with data: %s", profile_data)
         try:
             result = await self.hass.async_add_executor_job(self.api.create_profile, profile_data)
+            if result is False:
+                raise ValueError("Profile creation validation failed")
             _LOGGER.debug("Profile creation result: %s", result)
-        except Exception as e:
-            _LOGGER.error(f"Profile creation failed: {e}")
+        except Exception:
+            _LOGGER.exception("Profile creation failed")
             raise
         self._next_refresh_verbose = True
         await self.async_request_refresh()
@@ -166,8 +193,8 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 self.api.delete_profile_by_id, profile_id
             )
             _LOGGER.debug("Profile deletion result: %s", result)
-        except Exception as e:
-            _LOGGER.error(f"Profile deletion failed: {e}")
+        except Exception:
+            _LOGGER.exception("Profile deletion failed")
             raise
         self._next_refresh_verbose = True
         await self.async_request_refresh()
@@ -182,8 +209,8 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 self.api.create_schedule, schedule_data
             )
             _LOGGER.debug("Schedule creation result: %s", result)
-        except Exception as e:
-            _LOGGER.error(f"Schedule creation failed: {e}")
+        except Exception:
+            _LOGGER.exception("Schedule creation failed")
             raise
         self._next_refresh_verbose = True
         await self.async_request_refresh()
@@ -198,8 +225,8 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 self.api.delete_schedule_by_id, schedule_id
             )
             _LOGGER.debug("Schedule deletion result: %s", result)
-        except Exception as e:
-            _LOGGER.error(f"Schedule deletion failed: {e}")
+        except Exception:
+            _LOGGER.exception("Schedule deletion failed")
             raise
         self._next_refresh_verbose = True
         await self.async_request_refresh()
@@ -214,8 +241,8 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 self.api.toggle_schedule, schedule_id, enabled
             )
             _LOGGER.debug("Schedule toggle result: %s", result)
-        except Exception as e:
-            _LOGGER.error(f"Schedule toggle failed: {e}")
+        except Exception:
+            _LOGGER.exception("Schedule toggle failed")
             raise
         self._next_refresh_verbose = True
         await self.async_request_refresh()

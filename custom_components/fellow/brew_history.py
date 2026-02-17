@@ -338,16 +338,16 @@ class BrewHistoryManager:
     
     def debug_water_usage_history(self) -> None:
         """Debug method to log all water usage history."""
-        _LOGGER.info(f"Water usage history ({len(self._water_usage_history)} records):")
+        _LOGGER.info("Water usage history (%d records):", len(self._water_usage_history))
         for i, record in enumerate(self._water_usage_history):
             timestamp = record.get("timestamp", "Unknown")
             water_used = record.get("water_used_ml", 0)
             total_at_time = record.get("total_water_at_time", 0)
-            _LOGGER.info(f"  {i+1}. {timestamp}: +{water_used}ml (total: {total_at_time}ml)")
+            _LOGGER.info("  %d. %s: +%sml (total: %sml)", i+1, timestamp, water_used, total_at_time)
         
         if not self._water_usage_history:
             _LOGGER.info("  No water usage records found")
-            _LOGGER.info(f"  Current tracking state: last_total_water={self._last_total_water}")
+            _LOGGER.info("  Current tracking state: last_total_water=%s", self._last_total_water)
     
     async def async_reset_water_tracking(self, current_total_water: int) -> None:
         """Reset water usage tracking with a new baseline."""
