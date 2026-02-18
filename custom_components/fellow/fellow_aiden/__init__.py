@@ -164,7 +164,6 @@ class FellowAiden:
 
         self._ensure_success(response, "Authentication")
         parsed = self._parse_response(response)
-        self._log.debug(parsed)
         if "accessToken" not in parsed or "refreshToken" not in parsed:
             raise Exception(f"Authentication response missing tokens: {parsed}")
 
@@ -470,10 +469,6 @@ class FellowAiden:
     def fetch_device(self):
         """Public method to re-fetch device data from the cloud."""
         self.__device()
-
-    def refresh(self):
-        """Public method to re-authenticate and refresh device data."""
-        self.authenticate()
 
     def authenticate(self):
         """Public method to reauthenticate the user.

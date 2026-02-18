@@ -47,7 +47,7 @@ The integration includes a vendored copy of the Fellow Aiden library in `fellow_
 - **Lazy Loading**: Profiles and schedules are fetched on-demand via `@property` decorators
 - **Performance**: Profile validation removed from delete operations for speed
 
-**Public API**: The library exposes `fetch_device()` and `refresh()` methods for the coordinator to trigger data refreshes and re-authentication respectively. Token refresh is handled automatically inside `_request_with_reauth()` using the stored refresh token, with fallback to full re-login.
+**Public API**: The library exposes `fetch_device()` and `authenticate()` methods for the coordinator to trigger data refreshes and re-authentication respectively. Token refresh is handled automatically inside `_request_with_reauth()` using the stored refresh token, with fallback to full re-login.
 
 ### Services
 
