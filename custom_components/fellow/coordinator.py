@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .fellow_aiden import FellowAiden
+from .fellow_aiden import FellowAiden, FellowAuthError
 from .brew_history import BrewHistoryManager
 from .const import DEFAULT_UPDATE_INTERVAL_MINUTES
 
@@ -90,13 +90,12 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         try:
             _LOGGER.debug("Fetching device data")
             self.api.fetch_device()
+        except FellowAuthError as err:
+            raise ConfigEntryAuthFailed(  # noqa: TRY003
+                f"Authentication failed: {err}"
+            ) from err
         except Exception as err:
-            err_message = str(err).lower()
-            if "email or password incorrect" in err_message:
-                raise ConfigEntryAuthFailed(
-                    f"Authentication failed: {err}"
-                ) from err
-            raise UpdateFailed(
+            raise UpdateFailed(  # noqa: TRY003
                 f"Device fetch failed: {err}"
             ) from err
 

@@ -14,6 +14,10 @@ def similar(a, b):
     return SequenceMatcher(None, a, b).ratio()
 
     
+class FellowAuthError(Exception):
+    """Raised when Fellow API authentication fails (bad credentials)."""
+
+
 class FellowAiden:
 
     """Fellow object to interact with Aiden brewer."""
@@ -22,6 +26,7 @@ class FellowAiden:
     INTERVAL = 0.5
     BASE_URL = 'https://l8qtmnc692.execute-api.us-west-2.amazonaws.com/v1'
     API_AUTH = '/auth/login'
+    API_AUTH_REFRESH = '/auth/refresh'
     API_DEVICES = '/devices'
     API_DEVICE = '/devices/{id}'
     API_SCHEDULES = '/devices/{id}/schedules'
@@ -99,12 +104,18 @@ class FellowAiden:
         response = self._session.request(method, url, **kwargs)
         if response.status_code == 401:
             self._log.debug("Token expired, attempting refresh")
-            if self.__refresh_auth():
+            refreshed = self.__refresh_auth()
+            if refreshed:
                 self._log.debug("Token refresh successful")
+                response = self._session.request(method, url, **kwargs)
+                if response.status_code == 401:
+                    self._log.debug("Still 401 after token refresh, falling back to full re-login")
+                    self.__auth(fetch_device=False)
+                    response = self._session.request(method, url, **kwargs)
             else:
                 self._log.debug("Token refresh failed, falling back to full re-login")
                 self.__auth(fetch_device=False)
-            response = self._session.request(method, url, **kwargs)
+                response = self._session.request(method, url, **kwargs)
             if response.status_code == 401:
                 self._log.warning(
                     "Still unauthorized after re-authentication — credentials may be invalid"
@@ -119,12 +130,16 @@ class FellowAiden:
         if not self._refresh:
             return False
         try:
-            refresh_url = self.BASE_URL + '/auth/refresh'
+            refresh_url = self.BASE_URL + self.API_AUTH_REFRESH
             response = self._session.post(
                 refresh_url,
                 json={"refreshToken": self._refresh},
                 headers=self.HEADERS,
             )
+        except Exception:
+            self._log.debug("Refresh token request failed", exc_info=True)
+            return False
+        else:
             if response.status_code != 200:
                 self._log.debug("Refresh endpoint returned %s", response.status_code)
                 return False
@@ -137,9 +152,6 @@ class FellowAiden:
                 self._refresh = parsed["refreshToken"]
             self._session.headers.update({"Authorization": "Bearer " + self._token})
             return True
-        except Exception:
-            self._log.debug("Refresh token request failed", exc_info=True)
-            return False
 
     def __auth(self, fetch_device=False):
         self._log.debug("Authenticating user")
@@ -148,7 +160,7 @@ class FellowAiden:
         login_url = self.BASE_URL + self.API_AUTH
         response = self._session.post(login_url, json=auth, headers=self.HEADERS)
         if response.status_code in (400, 401, 403):
-            raise Exception("Email or password incorrect.")
+            raise FellowAuthError("Email or password incorrect.")
 
         self._ensure_success(response, "Authentication")
         parsed = self._parse_response(response)
@@ -461,7 +473,7 @@ class FellowAiden:
 
     def refresh(self):
         """Public method to re-authenticate and refresh device data."""
-        self.__auth(fetch_device=True)
+        self.authenticate()
 
     def authenticate(self):
         """Public method to reauthenticate the user.
