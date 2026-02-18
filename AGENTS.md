@@ -47,7 +47,7 @@ The integration includes a vendored copy of the Fellow Aiden library in `fellow_
 - **Lazy Loading**: Profiles and schedules are fetched on-demand via `@property` decorators
 - **Performance**: Profile validation removed from delete operations for speed
 
-**Important**: The coordinator uses private method hacks (`_FellowAiden__device()`, `_FellowAiden__auth()`) to force data refreshes, as the library doesn't expose public refresh methods.
+**Public API**: The library exposes `fetch_device()` and `refresh()` methods for the coordinator to trigger data refreshes and re-authentication respectively. Token refresh is handled automatically inside `_request_with_reauth()` using the stored refresh token, with fallback to full re-login.
 
 ### Services
 
@@ -67,8 +67,9 @@ Service definitions are in `services.yaml` with extensive parameter validation.
 ### Authentication & Error Handling
 
 - Initial auth happens during config flow setup
-- Coordinator handles 401 responses by triggering re-authentication
-- Library automatically retries failed requests after re-auth
+- On 401, `_request_with_reauth()` first tries a lightweight token refresh via the stored refresh token, then falls back to full email/password re-login
+- Token expiry is expected and logged at DEBUG level; only persistent auth failures log at WARNING
+- The coordinator delegates all auth retry logic to the library — no redundant retry wrapping
 - Update failures are logged but don't crash the integration
 
 ## Testing & Debugging

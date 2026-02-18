@@ -98,10 +98,48 @@ class FellowAiden:
         """Send a request and retry once after refreshing auth on HTTP 401."""
         response = self._session.request(method, url, **kwargs)
         if response.status_code == 401:
-            self._log.warning("Unauthorized response received. Attempting to reauthenticate...")
-            self.__auth(fetch_device=False)
+            self._log.debug("Token expired, attempting refresh")
+            if self.__refresh_auth():
+                self._log.debug("Token refresh successful")
+            else:
+                self._log.debug("Token refresh failed, falling back to full re-login")
+                self.__auth(fetch_device=False)
             response = self._session.request(method, url, **kwargs)
+            if response.status_code == 401:
+                self._log.warning(
+                    "Still unauthorized after re-authentication — credentials may be invalid"
+                )
         return response
+
+    def __refresh_auth(self):
+        """Attempt to refresh the access token using the stored refresh token.
+
+        Returns True on success, False on any failure (allowing fallback to full login).
+        """
+        if not self._refresh:
+            return False
+        try:
+            refresh_url = self.BASE_URL + '/auth/refresh'
+            response = self._session.post(
+                refresh_url,
+                json={"refreshToken": self._refresh},
+                headers=self.HEADERS,
+            )
+            if response.status_code != 200:
+                self._log.debug("Refresh endpoint returned %s", response.status_code)
+                return False
+            parsed = self._parse_response(response)
+            if "accessToken" not in parsed:
+                self._log.debug("Refresh response missing accessToken")
+                return False
+            self._token = parsed["accessToken"]
+            if "refreshToken" in parsed:
+                self._refresh = parsed["refreshToken"]
+            self._session.headers.update({"Authorization": "Bearer " + self._token})
+            return True
+        except Exception:
+            self._log.debug("Refresh token request failed", exc_info=True)
+            return False
 
     def __auth(self, fetch_device=False):
         self._log.debug("Authenticating user")
@@ -417,9 +455,16 @@ class FellowAiden:
         self._ensure_success(response, f"Schedule toggle ({sid})")
         return True
         
+    def fetch_device(self):
+        """Public method to re-fetch device data from the cloud."""
+        self.__device()
+
+    def refresh(self):
+        """Public method to re-authenticate and refresh device data."""
+        self.__auth(fetch_device=True)
+
     def authenticate(self):
-        """
-        Public method to reauthenticate the user.
+        """Public method to reauthenticate the user.
 
         This allows external callers (like HA integration) to trigger
         reauthentication without accessing the private __auth method.
