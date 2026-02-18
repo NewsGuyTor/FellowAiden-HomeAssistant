@@ -192,6 +192,8 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             result = await self.hass.async_add_executor_job(
                 self.api.delete_profile_by_id, profile_id
             )
+            if result is False:
+                raise ValueError("Profile deletion failed")
             _LOGGER.debug("Profile deletion result: %s", result)
         except Exception:
             _LOGGER.exception("Profile deletion failed")
@@ -208,6 +210,8 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             result = await self.hass.async_add_executor_job(
                 self.api.create_schedule, schedule_data
             )
+            if result is False:
+                raise ValueError("Schedule creation validation failed")
             _LOGGER.debug("Schedule creation result: %s", result)
         except Exception:
             _LOGGER.exception("Schedule creation failed")
@@ -224,6 +228,8 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             result = await self.hass.async_add_executor_job(
                 self.api.delete_schedule_by_id, schedule_id
             )
+            if result is False:
+                raise ValueError("Schedule deletion failed")
             _LOGGER.debug("Schedule deletion result: %s", result)
         except Exception:
             _LOGGER.exception("Schedule deletion failed")
@@ -240,6 +246,8 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             result = await self.hass.async_add_executor_job(
                 self.api.toggle_schedule, schedule_id, enabled
             )
+            if result is False:
+                raise ValueError("Schedule toggle failed")
             _LOGGER.debug("Schedule toggle result: %s", result)
         except Exception:
             _LOGGER.exception("Schedule toggle failed")
