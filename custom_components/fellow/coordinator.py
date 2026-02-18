@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .fellow_aiden import FellowAiden
+from .fellow_aiden import FellowAiden, FellowAuthError
 from .brew_history import BrewHistoryManager
 from .const import DEFAULT_UPDATE_INTERVAL_MINUTES
 
@@ -82,51 +82,22 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise UpdateFailed(f"Unexpected error: {err}") from err
 
     def _fetch(self, verbose_logging: bool = False) -> dict[str, Any]:
-        """
-        Synchronous call to retrieve brewer info from the library.
+        """Synchronous call to retrieve brewer info from the library.
 
         Args:
             verbose_logging: If True, log full API responses. If False, only log basic info.
-
-        TODO: Remove private __device/__auth calls when library adds public refresh API.
-        HACK:
-        We call the private method __device() to re-fetch the device data
-        from the cloud. This is not ideal, but works until the library
-        provides a public refresh() method.
         """
-        # Forcing a re-download of device info from the cloud:
         try:
-            _LOGGER.debug("Attempting to fetch device data.")
-            self.api._FellowAiden__device()  # <-- HACK: Accessing private method
-        except Exception as device_err:
-            _LOGGER.error(
-                "Error fetching device data: %s. Attempting to re-authenticate.",
-                device_err,
-            )
-            try:
-                _LOGGER.debug("Re-authenticating user.")
-                self.api._FellowAiden__auth()  # <-- HACK: Accessing private method
-            except Exception as auth_err:
-                _LOGGER.error("Re-authentication failed: %s", auth_err)
-                auth_message = str(auth_err).lower()
-                if "email or password incorrect" in auth_message:
-                    raise ConfigEntryAuthFailed(
-                        f"Authentication failed: {auth_err}"
-                    ) from auth_err
-                raise UpdateFailed(
-                    f"Re-authentication request failed: {auth_err}"
-                ) from auth_err
-
-            try:
-                _LOGGER.debug("Re-authentication successful. Re-fetching device data.")
-                self.api._FellowAiden__device()  # <-- HACK: Accessing private method
-            except Exception as refresh_err:
-                _LOGGER.error(
-                    "Device refresh failed after re-authentication: %s", refresh_err
-                )
-                raise UpdateFailed(
-                    f"Device refresh failed after re-authentication: {refresh_err}"
-                ) from refresh_err
+            _LOGGER.debug("Fetching device data")
+            self.api.fetch_device()
+        except FellowAuthError as err:
+            raise ConfigEntryAuthFailed(  # noqa: TRY003
+                f"Authentication failed: {err}"
+            ) from err
+        except Exception as err:
+            raise UpdateFailed(  # noqa: TRY003
+                f"Device fetch failed: {err}"
+            ) from err
 
         brewer_name = self.api.get_display_name()
         profiles = self.api.get_profiles()
