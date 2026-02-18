@@ -27,6 +27,17 @@ from .coordinator import FellowAidenDataUpdateCoordinator
 _LOGGER = logging.getLogger(__name__)
 
 PROFILE_ID_RE = re.compile(r"^(p|plocal)\d+$")
+_CAMEL_TO_SNAKE_RE = re.compile(r"([a-z0-9])([A-Z])")
+
+
+def _normalize_keys(data: dict) -> dict:
+    """Normalize camelCase keys to snake_case for backward compatibility.
+
+    Allows automations written for v1.2 (camelCase keys) to keep working
+    after the v1.3 switch to snake_case service parameters.
+    """
+    return {_CAMEL_TO_SNAKE_RE.sub(r"\1_\2", k).lower(): v for k, v in data.items()}
+
 REFRESH_RESPONSE_REDACT_KEYS = {
     "email",
     "password",
@@ -82,7 +93,7 @@ def _coerce_temperature_list(value: object) -> list[float]:
 
     return temperatures
 
-CREATE_PROFILE_SCHEMA = vol.Schema({
+CREATE_PROFILE_SCHEMA = vol.All(_normalize_keys, vol.Schema({
     vol.Optional("profile_type", default=DEFAULT_PROFILE_TYPE): vol.Coerce(int),
     vol.Required("title"): cv.string,
     vol.Required("ratio"): vol.Coerce(float),
@@ -98,9 +109,9 @@ CREATE_PROFILE_SCHEMA = vol.Schema({
     vol.Required("batch_pulses_number"): vol.Coerce(int),
     vol.Required("batch_pulses_interval"): vol.Coerce(int),
     vol.Required("batch_pulse_temperatures"): _coerce_temperature_list,
-})
+}))
 
-CREATE_SCHEDULE_SCHEMA = vol.Schema({
+CREATE_SCHEDULE_SCHEMA = vol.All(_normalize_keys, vol.Schema({
     vol.Optional("monday", default=False): cv.boolean,
     vol.Optional("tuesday", default=False): cv.boolean,
     vol.Optional("wednesday", default=False): cv.boolean,
@@ -113,7 +124,7 @@ CREATE_SCHEDULE_SCHEMA = vol.Schema({
     vol.Optional("profile_name"): cv.string,
     vol.Optional("profile_id"): cv.string,
     vol.Optional("enabled", default=True): cv.boolean,
-})
+}))
 
 
 def _get_coordinator(hass: HomeAssistant) -> FellowAidenDataUpdateCoordinator:
