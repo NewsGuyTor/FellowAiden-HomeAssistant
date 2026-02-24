@@ -8,7 +8,8 @@ import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigFlowResult
-from homeassistant.core import callback
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import TextSelector, TextSelectorConfig, TextSelectorType
 
 from .fellow_aiden import FellowAiden
@@ -24,9 +25,11 @@ USER_SCHEMA = vol.Schema(
 )
 
 
-def _try_login(email: str, password: str) -> None:
-    """Attempt to authenticate. Raises on failure."""
-    FellowAiden(email, password)
+async def _try_login(hass: HomeAssistant, email: str, password: str) -> None:
+    """Attempt to authenticate asynchronously. Raises on failure."""
+    session = async_get_clientsession(hass)
+    api = FellowAiden(email, password, session)
+    await api.authenticate()
 
 
 class FellowAidenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -45,7 +48,7 @@ class FellowAidenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             email = user_input["email"]
             password = user_input["password"]
             try:
-                await self.hass.async_add_executor_job(_try_login, email, password)
+                await _try_login(self.hass, email, password)
             except Exception:
                 _LOGGER.exception("Authentication failed")
                 errors["base"] = "auth"
@@ -80,9 +83,7 @@ class FellowAidenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if self._reauth_email is None:
                 return self.async_abort(reason="unknown")
             try:
-                await self.hass.async_add_executor_job(
-                    _try_login, self._reauth_email, password
-                )
+                await _try_login(self.hass, self._reauth_email, password)
             except Exception:
                 _LOGGER.exception("Re-authentication failed")
                 errors["base"] = "auth"
@@ -117,7 +118,7 @@ class FellowAidenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             email = user_input["email"]
             password = user_input["password"]
             try:
-                await self.hass.async_add_executor_job(_try_login, email, password)
+                await _try_login(self.hass, email, password)
             except Exception:
                 _LOGGER.exception("Reconfigure authentication failed")
                 errors["base"] = "auth"
