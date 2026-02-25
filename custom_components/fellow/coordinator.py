@@ -46,7 +46,12 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Create the async API client and perform the initial refresh."""
         session = async_get_clientsession(self.hass)
         self.api = FellowAiden(self.email, self.password, session)
-        await self.api.authenticate()
+        try:
+            await self.api.authenticate()
+        except FellowAuthError as err:
+            raise ConfigEntryAuthFailed(
+                f"Authentication failed: {err}"
+            ) from err
         await super().async_config_entry_first_refresh()
 
     async def _async_update_data(self) -> dict[str, Any]:
@@ -73,6 +78,10 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             profiles = await self.api.get_profiles()
             device_config = self.api.get_device_config()
             schedules = await self.api.get_schedules()
+        except FellowAuthError as err:
+            raise ConfigEntryAuthFailed(
+                f"Authentication failed: {err}"
+            ) from err
         except Exception as err:
             raise UpdateFailed(  # noqa: TRY003
                 f"Data fetch failed: {err}"

@@ -103,6 +103,7 @@ class FellowAiden:
             )
             if response.status not in self._RETRY_STATUSES or attempt == self._MAX_RETRIES:
                 return response
+            response.release()
             self._log.debug(
                 "Retry %d/%d for %s %s (status %s)",
                 attempt + 1,
@@ -123,19 +124,26 @@ class FellowAiden:
             refreshed = await self._refresh_auth()
             if refreshed:
                 self._log.debug("Token refresh successful")
+                response.release()
                 response = await self._request(method, url, **kwargs)
                 if response.status == 401:
                     self._log.debug(
                         "Still 401 after token refresh, falling back to full re-login"
                     )
                     await self._do_auth(fetch_device=False)
+                    response.release()
                     response = await self._request(method, url, **kwargs)
             else:
                 self._log.debug("Token refresh failed, falling back to full re-login")
                 await self._do_auth(fetch_device=False)
+                response.release()
                 response = await self._request(method, url, **kwargs)
             if response.status == 401:
                 self._log.warning(
+                    "Still unauthorized after re-authentication — credentials may be invalid"
+                )
+                response.release()
+                raise FellowAuthError(
                     "Still unauthorized after re-authentication — credentials may be invalid"
                 )
         return response
@@ -188,6 +196,7 @@ class FellowAiden:
 
         if response.status != 200:
             self._log.debug("Refresh endpoint returned %s", response.status)
+            response.release()
             return False
         parsed = await self._parse_response(response)
         if "accessToken" not in parsed:
@@ -207,6 +216,7 @@ class FellowAiden:
             "post", login_url, authenticated=False, json=auth_payload,
         )
         if response.status in (400, 401, 403):
+            response.release()
             raise FellowAuthError("Email or password incorrect.")
 
         await self._ensure_success(response, "Authentication")
@@ -501,7 +511,7 @@ class FellowAiden:
             message = parsed.get("message", "Unable to get error message.")
             if "Profile could not be found" in message:
                 ids = await self._get_profile_ids()
-                message += f"Valid profiles: {ids}"
+                message += f" Valid profiles: {ids}"
             raise Exception(f"Error in processing: {message}")
 
         await self._fetch_device()
