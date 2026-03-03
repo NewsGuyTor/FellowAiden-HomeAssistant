@@ -120,9 +120,12 @@ class FellowAidenDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             len(profiles) if profiles else 0, len(schedules) if schedules else 0,
         )
 
-        # Update historical data with the new data
+        # Update historical data with the new data (non-fatal)
         _LOGGER.debug("Updating historical data")
-        await self.history_manager.async_update_data(device_config, profiles)
+        try:
+            await self.history_manager.async_update_data(device_config, profiles)
+        except Exception:
+            _LOGGER.warning("Failed to update historical data", exc_info=True)
 
         _LOGGER.debug("Data update completed successfully")
         return result

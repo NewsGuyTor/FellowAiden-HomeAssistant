@@ -130,13 +130,13 @@ class FellowAiden:
                     self._log.debug(
                         "Still 401 after token refresh, falling back to full re-login"
                     )
-                    await self._do_auth(fetch_device=False)
                     response.release()
+                    await self._do_auth(fetch_device=False)
                     response = await self._request(method, url, **kwargs)
             else:
                 self._log.debug("Token refresh failed, falling back to full re-login")
-                await self._do_auth(fetch_device=False)
                 response.release()
+                await self._do_auth(fetch_device=False)
                 response = await self._request(method, url, **kwargs)
             if response.status == 401:
                 self._log.warning(
@@ -369,6 +369,7 @@ class FellowAiden:
         shared_url = self.BASE_URL + self.API_SHARED_PROFILE.format(bid=brew_id)
         response = await self._request_with_reauth("get", shared_url)
         if response.status == 404:
+            response.release()
             raise ValueError(f"Failed to fetch profile (ID: {brew_id})")
 
         await self._ensure_success(
