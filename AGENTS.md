@@ -38,16 +38,18 @@ This is a Home Assistant custom integration for Fellow Aiden coffee brewers. The
 ### Fellow Aiden Library (Vendored)
 
 The integration includes a vendored copy of the Fellow Aiden library in `fellow_aiden/`:
-- **`__init__.py`**: Main `FellowAiden` class with API methods
+- **`__init__.py`**: Main `FellowAiden` async class with API methods
 - **`profile.py`**: Pydantic models for coffee profiles
 - **`schedule.py`**: Pydantic models for brewing schedules
 
 **Key Features**:
-- **HTTP Retries**: Built-in retry logic for failed requests (3 retries for 4xx/5xx errors)
-- **Lazy Loading**: Profiles and schedules are fetched on-demand via `@property` decorators
+- **Fully Async**: Uses `aiohttp` for all HTTP requests — no executor thread wrapping needed
+- **Injected Session**: Accepts an `aiohttp.ClientSession` (from HA's `async_get_clientsession`) for proper session management
+- **HTTP Retries**: Built-in retry logic for server errors (3 retries for 408/5xx)
+- **Lazy Loading**: Profiles and schedules are fetched on-demand via async `get_profiles()`/`get_schedules()` methods
 - **Performance**: Profile validation removed from delete operations for speed
 
-**Public API**: The library exposes `fetch_device()` and `authenticate()` methods for the coordinator to trigger data refreshes and re-authentication respectively. Token refresh is handled automatically inside `_request_with_reauth()` using the stored refresh token, with fallback to full re-login.
+**Public API**: Construction is lightweight — call `await api.authenticate()` after creating the instance to perform the initial login and device fetch. `await api.fetch_device()` triggers data refreshes. Token refresh is handled automatically inside `_request_with_reauth()` using the stored refresh token, with fallback to full re-login.
 
 ### Services
 
@@ -66,7 +68,8 @@ Service definitions are in `services.yaml` with extensive parameter validation.
 
 ### Authentication & Error Handling
 
-- Initial auth happens during config flow setup
+- Initial auth happens during config flow setup via `await _try_login(hass, email, password)`
+- The library is fully async — the coordinator calls `await self.api.fetch_device()` etc. directly, no executor jobs
 - On 401, `_request_with_reauth()` first tries a lightweight token refresh via the stored refresh token, then falls back to full email/password re-login
 - Token expiry is expected and logged at DEBUG level; only persistent auth failures log at WARNING
 - The coordinator delegates all auth retry logic to the library — no redundant retry wrapping
