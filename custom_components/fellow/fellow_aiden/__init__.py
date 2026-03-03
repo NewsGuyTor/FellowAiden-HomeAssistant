@@ -1,6 +1,7 @@
 """Async Fellow object to interact with Aiden brewer."""
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
 from difflib import SequenceMatcher
@@ -104,6 +105,7 @@ class FellowAiden:
             if response.status not in self._RETRY_STATUSES or attempt == self._MAX_RETRIES:
                 return response
             response.release()
+            await asyncio.sleep(min(2 ** attempt, 8))
             self._log.debug(
                 "Retry %d/%d for %s %s (status %s)",
                 attempt + 1,
@@ -406,6 +408,8 @@ class FellowAiden:
         await self._ensure_success(response, "Profile creation")
 
         parsed = await self._parse_response(response)
+        if not isinstance(parsed, dict):
+            raise Exception(f"Unexpected profile creation payload: {parsed}")
         if "id" not in parsed:
             raise Exception(f"Error in processing: {parsed}")
 
@@ -476,6 +480,7 @@ class FellowAiden:
         self._log.debug(delete_url)
         response = await self._request_with_reauth("delete", delete_url)
         await self._ensure_success(response, f"Profile deletion ({pid})")
+        self._profiles = None
 
         self._log.debug("Profile deleted")
         return True
@@ -535,6 +540,7 @@ class FellowAiden:
         self._log.debug(delete_url)
         response = await self._request_with_reauth("delete", delete_url)
         await self._ensure_success(response, f"Schedule deletion ({sid})")
+        self._schedules = None
 
         self._log.debug("Schedule deleted")
         return True
@@ -566,4 +572,5 @@ class FellowAiden:
             "patch", patch_url, json={"enabled": enabled}
         )
         await self._ensure_success(response, f"Schedule toggle ({sid})")
+        self._schedules = None
         return True
