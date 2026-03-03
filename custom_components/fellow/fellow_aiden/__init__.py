@@ -341,7 +341,7 @@ class FellowAiden:
     async def _is_valid_schedule_id(self, sid: str) -> bool:
         """Check if a schedule ID is valid."""
         schedules = await self.get_schedules()
-        return any(sid == s["id"] for s in schedules)
+        return any(sid == str(s["id"]) for s in schedules)
 
     # -- Profile operations -------------------------------------------------
 
@@ -508,6 +508,8 @@ class FellowAiden:
         await self._ensure_success(response, "Schedule creation")
 
         parsed = await self._parse_response(response)
+        if not isinstance(parsed, dict):
+            raise Exception(f"Unexpected schedule creation payload: {parsed}")
         if "id" not in parsed:
             message = parsed.get("message", "Unable to get error message.")
             if "Profile could not be found" in message:
